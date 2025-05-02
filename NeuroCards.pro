@@ -9,11 +9,15 @@ SOURCES += \
     src/core/deckmanager.cpp \
     src/ui/mainwindow.cpp \
     src/ui/flashCardEditorWidget.cpp \
-    src/ui/deckViewWidget.cpp
+    src/ui/deckViewWidget.cpp \
+    src/ui/studyModePanel.cpp \
+    src/ui/reviewPanel.cpp
 
 HEADERS += \
     src/core/flashcard.h \
     src/core/deckmanager.h \
     src/ui/mainwindow.h \
     src/ui/flashCardEditorWidget.h \
-    src/ui/deckViewWidget.h
+    src/ui/deckViewWidget.h \
+    src/ui/studyModePanel.h \
+    src/ui/reviewPanel.h

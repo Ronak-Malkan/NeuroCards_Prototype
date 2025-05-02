@@ -1,32 +1,39 @@
 #include "mainwindow.h"
 #include "../core/deckmanager.h"
-#include "flashCardEditorWidget.h"
+// #include "flashCardEditorWidget.h"
 #include "deckViewWidget.h"
+#include "studyModePanel.h" 
 
-#include <QSplitter>
-#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QWidget>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    // Instantiate core object.
+    // Initialize backend
     m_deckManager = new DeckManager(this);
 
-    // Instantiate UI widgets.
-    m_editorWidget = new FlashcardEditorWidget(m_deckManager, this);
+    // Initialize widgets
+//    m_editorWidget = new FlashcardEditorWidget(m_deckManager, this);
     m_deckViewWidget = new DeckViewWidget(m_deckManager, this);
+    m_studyPanel = new StudyModePanel(m_deckManager, this);
+    connect(m_studyPanel, &StudyModePanel::cardAdded, m_deckViewWidget, &DeckViewWidget::refreshList);
 
-    // Use a splitter for layout.
-    m_splitter = new QSplitter(this);
-    m_splitter->addWidget(m_editorWidget);
-    m_splitter->addWidget(m_deckViewWidget);
-    m_splitter->setStretchFactor(0, 2);
-    m_splitter->setStretchFactor(1, 1);
+    // Layout
+    QWidget *centralWidget = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
-    setCentralWidget(m_splitter);
-    setWindowTitle("NeuroCards - Add Flashcards Prototype");
+//    mainLayout->addWidget(m_editorWidget);
+    mainLayout->addWidget(m_deckViewWidget);
+    mainLayout->addWidget(m_studyPanel);  
+
+    centralWidget->setLayout(mainLayout);
+    setCentralWidget(centralWidget);
+
+    setWindowTitle("NeuroCards");
 }
 
 MainWindow::~MainWindow() {
-    // Child widgets are deleted automatically.
+    // No manual deletion needed (Qt handles children)
 }
+

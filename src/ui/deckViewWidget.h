@@ -10,7 +10,8 @@ class DeckViewWidget : public QWidget {
     Q_OBJECT
 public:
     explicit DeckViewWidget(DeckManager *deckManager, QWidget *parent = nullptr);
-    void refreshView();
+//    void refreshView();
+    void refreshList();
 
 private:
     QListWidget *m_listWidget;

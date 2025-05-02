@@ -11,7 +11,7 @@ class DeckManager : public QObject {
 public:
     explicit DeckManager(QObject *parent = nullptr);
     
-    QVector<Flashcard> flashcards() const;
+    QVector<Flashcard> getFlashcards() const;
     bool addFlashcard(const Flashcard &card);
     bool loadDeck();
     bool saveDeck();

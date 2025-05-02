@@ -13,7 +13,7 @@ DeckManager::DeckManager(QObject *parent)
     loadDeck();
 }
 
-QVector<Flashcard> DeckManager::flashcards() const {
+QVector<Flashcard> DeckManager::getFlashcards() const {
     return m_flashcards;
 }
 

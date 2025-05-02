@@ -5,8 +5,9 @@
 
 class QSplitter;
 class DeckManager;
-class FlashcardEditorWidget;
+//class FlashcardEditorWidget;
 class DeckViewWidget;
+class StudyModePanel;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -17,8 +18,10 @@ public:
 private:
     QSplitter *m_splitter;
     DeckManager *m_deckManager;
-    FlashcardEditorWidget *m_editorWidget;
+//    FlashcardEditorWidget *m_editorWidget;
     DeckViewWidget *m_deckViewWidget;
+    StudyModePanel *m_studyPanel;
 };
 
 #endif // MAINWINDOW_H
+
