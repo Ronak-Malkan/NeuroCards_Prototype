@@ -2,12 +2,16 @@
 #include <QMessageBox>
 #include <QRandomGenerator>
 #include <algorithm>
+#include <random>
 
 ReviewPanel::ReviewPanel(DeckManager* manager, QWidget *parent)
     : QWidget(parent), deckManager_(manager), currentIndex_(0), showingBack_(false) {
 
     cards_ = deckManager_->getFlashcards().toVector();
-    std::shuffle(cards_.begin(), cards_.end(), QRandomGenerator::global()->generate());
+    // create a mersenne-twister engine seeded from Qt
+    std::mt19937 rng(QRandomGenerator::global()->generate());
+    // shuffle using that engine
+    std::shuffle(cards_.begin(), cards_.end(), rng);
 
     setupUI();
     loadCurrentCard();
@@ -110,9 +114,11 @@ void ReviewPanel::exitReview() {
 }
 
 void ReviewPanel::clearLayout(QLayout* layout) {
-    while (QLayoutItem* item = layout->takeAt(0)) {
-        if (item->widget() && item->widget() != modeSelector_) {
-            item->widget()->hide();  // hide instead of delete
+    QLayoutItem* item;
+    while ((item = layout->takeAt(0)) != nullptr) {
+        if (QWidget* widget = item->widget()) {
+            // hide or delete as appropriate
+            widget->hide();
         }
         delete item;
     }
