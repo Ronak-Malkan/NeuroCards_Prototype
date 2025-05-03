@@ -7,44 +7,38 @@
 #include <QVBoxLayout>
 #include <QVector>
 #include "../core/deckmanager.h"
+#include "../core/flashcard.h"
 
 class ReviewPanel : public QWidget {
     Q_OBJECT
 
 public:
     explicit ReviewPanel(DeckManager* manager, QWidget *parent = nullptr);
+    void reloadDeck();
 
 signals:
-    void reviewExited();  // to return to StudyModePanel
+    void reviewExited();  // tells StudyModePanel to switch back
 
 private slots:
     void showNextCard();
-    void flipCard();               // for Flip mode
-    void checkQuizAnswer();        // for Quiz mode
-    void exitReview();             // return
+    void checkQuizAnswer();
+    void exitReview();
 
 private:
     DeckManager* deckManager_;
     QVector<Flashcard> cards_;
     int currentIndex_;
-    bool showingBack_;
 
-    // Common UI
+    // UI elements
     QVBoxLayout* layout_;
     QLabel* cardLabel_;
+    QPushButton* exitButton_;       // Exit Review Mode
     QPushButton* nextButton_;
-    QPushButton* exitButton_;
-
-    // Flip
-    QPushButton* flipButton_;
-
-    // Quiz
     QVector<QPushButton*> optionButtons_;
     QString correctAnswer_;
 
     void setupUI();
     void loadCurrentCard();
-    void clearLayout(QLayout* layout);
 };
 
 #endif // REVIEWPANEL_H

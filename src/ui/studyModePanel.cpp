@@ -145,8 +145,11 @@ void StudyModePanel::enterReviewMode() {
     // Create review panel if not already
     if (!reviewPanel_) {
         reviewPanel_ = new ReviewPanel(deckManager_, this);
-        connect(reviewPanel_, &ReviewPanel::reviewExited, this, &StudyModePanel::exitReviewMode);
+        connect(reviewPanel_, &ReviewPanel::reviewExited,
+                this, &StudyModePanel::exitReviewMode);
         mainLayout_->addWidget(reviewPanel_);
+    } else {
+        reviewPanel_->reloadDeck();   // Refresh card list
     }
 
     reviewPanel_->show();
