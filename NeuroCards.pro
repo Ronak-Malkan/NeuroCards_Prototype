@@ -11,7 +11,9 @@ SOURCES += \
     src/ui/flashCardEditorWidget.cpp \
     src/ui/deckViewWidget.cpp \
     src/ui/studyModePanel.cpp \
-    src/ui/reviewPanel.cpp
+    src/ui/reviewPanel.cpp \
+    src/ui/cardPreviewDialog.cpp \
+    src/ui/cardDisplayWidget.cpp
 
 HEADERS += \
     src/core/flashcard.h \
@@ -20,4 +22,6 @@ HEADERS += \
     src/ui/flashCardEditorWidget.h \
     src/ui/deckViewWidget.h \
     src/ui/studyModePanel.h \
-    src/ui/reviewPanel.h
+    src/ui/reviewPanel.h \
+    src/ui/cardPreviewDialog.h \
+    src/ui/cardDisplayWidget.h

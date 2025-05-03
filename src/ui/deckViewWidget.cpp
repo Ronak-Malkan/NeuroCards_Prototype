@@ -1,4 +1,5 @@
 #include "deckViewWidget.h"
+#include "cardPreviewDialog.h"
 #include "../core/deckmanager.h"
 #include "../core/flashcard.h"
 
@@ -11,6 +12,14 @@ DeckViewWidget::DeckViewWidget(DeckManager *deckManager, QWidget *parent)
 {
     QVBoxLayout *layout = new QVBoxLayout(this);
     m_listWidget = new QListWidget(this);
+    connect(m_listWidget, &QListWidget::itemClicked,
+        this, [this](QListWidgetItem* item){
+    int row = m_listWidget->row(item);
+    const Flashcard& card = m_deckManager->getFlashcards().at(row);
+    CardPreviewDialog dlg(card, this);
+    dlg.exec();
+});
+
     layout->addWidget(m_listWidget);
     refreshList();
 
@@ -21,23 +30,8 @@ void DeckViewWidget::refreshList() {
     const auto& cards = m_deckManager->getFlashcards();
 
     for (const Flashcard& card : cards) {
-        QString display;
-
-        if (card.isQuizCard()) {
-            display += "Quiz: " + card.getFrontText();
-            display += "\nOptions: ";
-            QStringList opts = card.getOptions();
-            for (int i = 0; i < opts.size(); ++i) {
-                if (i > 0) display += " | ";
-                display += QString("%1. %2").arg(i + 1).arg(opts[i]);
-            }
-            display += "\n→  " + card.getOptions().at(card.getCorrectOptionIndex());
-        } else {
-            display += "Flip: " + card.getFrontText();
-            display += "\n→ " + card.getBackText();
-        }
-
-        m_listWidget->addItem(display);
+        // Always add only the front text
+        m_listWidget->addItem(card.getFrontText());
     }
 }
 
