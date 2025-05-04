@@ -1,5 +1,6 @@
 #include "deckDetailPanel.h"
 #include <QMessageBox>
+#include <QDebug>
 
 DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
     : QWidget(parent), m_deckManager(manager)
@@ -65,6 +66,7 @@ void DeckDetailPanel::onBackClicked() {
 }
 
 void DeckDetailPanel::onStudyClicked() {
+    qDebug() << "[DeckDetailPanel] Study clicked for deck:" << m_deckName;
     emit startStudy(m_deckName);
 }
 

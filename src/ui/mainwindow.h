@@ -7,7 +7,7 @@
 
 class DeckListPanel;
 class DeckDetailPanel;
-class StudyModePanel;
+class StudyPanel;
 class AddCardDialog;
 
 class MainWindow : public QMainWindow {
@@ -23,8 +23,8 @@ private:
 
     DeckListPanel*    m_deckListPanel;    // page 0
     DeckDetailPanel*  m_deckDetailPanel;  // page 1
-    StudyModePanel*   m_studyPanel;       // page 2
-
+    StudyPanel*       m_studyPanel;       // page 2
+   
     void setupUi();
     void setupConnections();
 };
