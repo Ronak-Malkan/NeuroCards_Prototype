@@ -1,175 +1,186 @@
 #include "studyModePanel.h"
-#include <QHBoxLayout>
 #include <QMessageBox>
+#include <QRandomGenerator>
+#include <random>
 
-StudyModePanel::StudyModePanel(DeckManager* manager, QWidget *parent)
-    : QWidget(parent), deckManager_(manager), currentMode_(Flip), reviewPanel_(nullptr)
+StudyModePanel::StudyModePanel(DeckManager* manager,
+                               const QString& deckName,
+                               QWidget *parent)
+    : QWidget(parent)
+    , m_deckManager(manager)
+    , m_deckName(deckName)
+    , m_currentMode(Flip)
+    , m_reviewPanel(nullptr)
 {
-    mainLayout_ = new QVBoxLayout(this);
+    // Main vertical layout
+    m_mainLayout = new QVBoxLayout(this);
+
+    // Header bar
+    setupHeader();
 
     // Mode selector dropdown
-    modeSelector_ = new QComboBox(this);
-    modeSelector_->addItems({"Flip", "Quiz"});
-    connect(modeSelector_, &QComboBox::currentTextChanged, this, &StudyModePanel::switchMode);
+    m_modeSelector = new QComboBox(this);
+    m_modeSelector->addItems({ tr("Flip"), tr("Quiz") });
+    connect(m_modeSelector, &QComboBox::currentTextChanged,
+            this, &StudyModePanel::switchMode);
+    m_mainLayout->addWidget(m_modeSelector);
 
-    // Dynamic input container
-    contentWidget_ = new QWidget(this);
-    contentWidget_->setLayout(new QVBoxLayout());
+    // Dynamic content area
+    m_contentWidget = new QWidget(this);
+    m_contentWidget->setLayout(new QVBoxLayout());
+    m_mainLayout->addWidget(m_contentWidget);
 
-    mainLayout_->addWidget(modeSelector_);
-    mainLayout_->addWidget(contentWidget_);
+    // Review mode button
+    m_reviewModeButton = new QPushButton(tr("Enter Review Mode"), this);
+    connect(m_reviewModeButton, &QPushButton::clicked,
+            this, &StudyModePanel::enterReviewMode);
+    m_mainLayout->addWidget(m_reviewModeButton);
 
-    // Add Review Mode button
-    reviewModeButton_ = new QPushButton("Enter Review Mode", this);
-    connect(reviewModeButton_, &QPushButton::clicked, this, &StudyModePanel::enterReviewMode);
-    mainLayout_->addWidget(reviewModeButton_);
+    setLayout(m_mainLayout);
 
-    setLayout(mainLayout_);
+    // Initialize in Flip mode
+    switchMode(tr("Flip"));
+}
 
-    switchMode("Flip");  // default
+void StudyModePanel::setupHeader() {
+    auto* headerLayout = new QHBoxLayout();
+    m_backButton = new QPushButton(tr("← Back"), this);
+    connect(m_backButton, &QPushButton::clicked,
+            this, &StudyModePanel::onBackClicked);
+    m_titleLabel = new QLabel(tr("Study: %1").arg(m_deckName), this);
+    m_titleLabel->setStyleSheet("font-weight: bold;");
+    headerLayout->addWidget(m_backButton);
+    headerLayout->addWidget(m_titleLabel);
+    headerLayout->addStretch();
+    m_mainLayout->addLayout(headerLayout);
+}
+
+void StudyModePanel::setDeck(const QString& deckName) {
+    m_deckName = deckName;
+    m_titleLabel->setText(tr("Study: %1").arg(deckName));
+    if (m_reviewPanel) {
+        m_reviewPanel->reloadDeck();
+    }
+}
+
+void StudyModePanel::onBackClicked() {
+    emit exitStudy();
 }
 
 void StudyModePanel::switchMode(const QString& mode) {
     clearContent();
-
-    if (mode == "Flip") {
-        currentMode_ = Flip;
+    if (mode == tr("Flip")) {
+        m_currentMode = Flip;
         setupFlipUI();
     } else {
-        currentMode_ = Quiz;
+        m_currentMode = Quiz;
         setupQuizUI();
     }
 }
 
 void StudyModePanel::setupFlipUI() {
-    auto layout = qobject_cast<QVBoxLayout*>(contentWidget_->layout());
-
-    flipQuestionInput_ = new QLineEdit(this);
-    flipQuestionInput_->setPlaceholderText("Enter question...");
-
-    flipAnswerInput_ = new QLineEdit(this);
-    flipAnswerInput_->setPlaceholderText("Enter answer...");
-
-    QPushButton* addButton = new QPushButton("Add Flip Card", this);
-    connect(addButton, &QPushButton::clicked, this, &StudyModePanel::addFlipCard);
-
-    layout->addWidget(new QLabel("Question:"));
-    layout->addWidget(flipQuestionInput_);
-    layout->addWidget(new QLabel("Answer:"));
-    layout->addWidget(flipAnswerInput_);
-    layout->addWidget(addButton);
+    auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout());
+    m_flipQuestionInput = new QLineEdit(this);
+    m_flipQuestionInput->setPlaceholderText(tr("Enter question..."));
+    m_flipAnswerInput = new QLineEdit(this);
+    m_flipAnswerInput->setPlaceholderText(tr("Enter answer..."));
+    QPushButton* addBtn = new QPushButton(tr("Add Flip Card"), this);
+    connect(addBtn, &QPushButton::clicked, this, &StudyModePanel::addFlipCard);
+    layout->addWidget(new QLabel(tr("Question:"), this));
+    layout->addWidget(m_flipQuestionInput);
+    layout->addWidget(new QLabel(tr("Answer:"), this));
+    layout->addWidget(m_flipAnswerInput);
+    layout->addWidget(addBtn);
 }
 
 void StudyModePanel::setupQuizUI() {
-    auto layout = qobject_cast<QVBoxLayout*>(contentWidget_->layout());
-
-    quizQuestionInput_ = new QLineEdit(this);
-    quizQuestionInput_->setPlaceholderText("Enter question...");
-
-    layout->addWidget(new QLabel("Question:"));
-    layout->addWidget(quizQuestionInput_);
-
+    auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout());
+    m_quizQuestionInput = new QLineEdit(this);
+    m_quizQuestionInput->setPlaceholderText(tr("Enter question..."));
+    layout->addWidget(new QLabel(tr("Question:"), this));
+    layout->addWidget(m_quizQuestionInput);
     for (int i = 0; i < 4; ++i) {
-        quizOptionInputs_[i] = new QLineEdit(this);
-        quizOptionInputs_[i]->setPlaceholderText(QString("Option %1").arg(i + 1));
-        layout->addWidget(quizOptionInputs_[i]);
+        m_quizOptionInputs[i] = new QLineEdit(this);
+        m_quizOptionInputs[i]->setPlaceholderText(tr("Option %1").arg(i+1));
+        layout->addWidget(m_quizOptionInputs[i]);
     }
-
-    correctOptionSelector_ = new QComboBox(this);
-    correctOptionSelector_->addItems({"Option 1", "Option 2", "Option 3", "Option 4"});
-
-    layout->addWidget(new QLabel("Select Correct Option:"));
-    layout->addWidget(correctOptionSelector_);
-
-    QPushButton* addButton = new QPushButton("Add Quiz Card", this);
-    connect(addButton, &QPushButton::clicked, this, &StudyModePanel::addQuizCard);
-    layout->addWidget(addButton);
+    m_quizCorrectSelector = new QComboBox(this);
+    m_quizCorrectSelector->addItems({ tr("Option 1"), tr("Option 2"),
+                                     tr("Option 3"), tr("Option 4") });
+    layout->addWidget(new QLabel(tr("Correct Option:"), this));
+    layout->addWidget(m_quizCorrectSelector);
+    QPushButton* addBtn = new QPushButton(tr("Add Quiz Card"), this);
+    connect(addBtn, &QPushButton::clicked, this, &StudyModePanel::addQuizCard);
+    layout->addWidget(addBtn);
 }
 
 void StudyModePanel::addFlipCard() {
-    QString question = flipQuestionInput_->text().trimmed();
-    QString answer = flipAnswerInput_->text().trimmed();
-
-    if (question.isEmpty() || answer.isEmpty()) {
-        QMessageBox::warning(this, "Missing Data", "Please fill out both question and answer.");
+    QString q = m_flipQuestionInput->text().trimmed();
+    QString a = m_flipAnswerInput->text().trimmed();
+    if (q.isEmpty() || a.isEmpty()) {
+        QMessageBox::warning(this, tr("Missing Data"),
+                             tr("Fill both question and answer."));
         return;
     }
-
-    Flashcard card(question, answer);  // standard constructor
-    deckManager_->addFlashcard(card);
-    emit cardAdded();
-
-    flipQuestionInput_->clear();
-    flipAnswerInput_->clear();
+    Flashcard card(q, a);
+    m_deckManager->addFlashcardToDeck(m_deckName, card);
+    emit cardAdded(m_deckName);
+    m_flipQuestionInput->clear();
+    m_flipAnswerInput->clear();
 }
 
 void StudyModePanel::addQuizCard() {
-    QString question = quizQuestionInput_->text().trimmed();
-    QStringList options;
-
-    // Collect options
-    for (int i = 0; i < 4; ++i) {
-        QString opt = quizOptionInputs_[i]->text().trimmed();
-        if (opt.isEmpty()) {
-            QMessageBox::warning(this, "Missing Data", "Please fill in all 4 options.");
-            return;
-        }
-        options.append(opt);
-    }
-
-    // Check question
-    if (question.isEmpty()) {
-        QMessageBox::warning(this, "Missing Question", "Please enter a question.");
+    QString q = m_quizQuestionInput->text().trimmed();
+    if (q.isEmpty()) {
+        QMessageBox::warning(this, tr("Missing Data"),
+                             tr("Enter a question."));
         return;
     }
-
-    int correctIndex = correctOptionSelector_->currentIndex();
-
-    Flashcard card(question, options, correctIndex);
-
-    deckManager_->addFlashcard(card);
-    emit cardAdded();
-
-    // Reset form
-    quizQuestionInput_->clear();
-    for (auto* opt : quizOptionInputs_) opt->clear();
-    correctOptionSelector_->setCurrentIndex(0);
+    QStringList opts;
+    for (int i = 0; i < 4; ++i) {
+        QString o = m_quizOptionInputs[i]->text().trimmed();
+        if (o.isEmpty()) {
+            QMessageBox::warning(this, tr("Missing Data"),
+                                 tr("Fill all options."));
+            return;
+        }
+        opts << o;
+    }
+    int idx = m_quizCorrectSelector->currentIndex();
+    Flashcard card(q, opts, idx);
+    m_deckManager->addFlashcardToDeck(m_deckName, card);
+    emit cardAdded(m_deckName);
+    m_quizQuestionInput->clear();
+    for (auto* w: m_quizOptionInputs) w->clear();
+    m_quizCorrectSelector->setCurrentIndex(0);
 }
 
 void StudyModePanel::enterReviewMode() {
-    // Hide input UI
-    contentWidget_->hide();
-    modeSelector_->hide();
-    reviewModeButton_->hide();
-
-    // Create review panel if not already
-    if (!reviewPanel_) {
-        reviewPanel_ = new ReviewPanel(deckManager_, this);
-        connect(reviewPanel_, &ReviewPanel::reviewExited,
+    m_contentWidget->hide();
+    m_modeSelector->hide();
+    m_reviewModeButton->hide();
+    if (!m_reviewPanel) {
+        m_reviewPanel = new ReviewPanel(m_deckManager, m_deckName, this);
+        connect(m_reviewPanel, &ReviewPanel::reviewExited,
                 this, &StudyModePanel::exitReviewMode);
-        mainLayout_->addWidget(reviewPanel_);
-    } else {
-        reviewPanel_->reloadDeck();   // Refresh card list
+        m_mainLayout->addWidget(m_reviewPanel);
     }
-
-    reviewPanel_->show();
+    m_reviewPanel->reloadDeck();
+    m_reviewPanel->show();
 }
 
 void StudyModePanel::exitReviewMode() {
-    if (reviewPanel_) {
-        reviewPanel_->hide();
-    }
-
-    contentWidget_->show();
-    modeSelector_->show();
-    reviewModeButton_->show();
+    if (m_reviewPanel) m_reviewPanel->hide();
+    m_modeSelector->show();
+    m_contentWidget->show();
+    m_reviewModeButton->show();
 }
 
 void StudyModePanel::clearContent() {
-    QLayout* layout = contentWidget_->layout();
-    while (QLayoutItem* item = layout->takeAt(0)) {
-        if (QWidget* widget = item->widget()) delete widget;
-        delete item;
+    auto* layout = m_contentWidget->layout();
+    QLayoutItem* it;
+    while ((it = layout->takeAt(0))) {
+        if (it->widget()) delete it->widget();
+        delete it;
     }
 }
-

@@ -3,13 +3,16 @@
 #include <QRandomGenerator>
 #include <random>
 
-ReviewPanel::ReviewPanel(DeckManager* manager, QWidget *parent)
+ReviewPanel::ReviewPanel(DeckManager* manager,
+                         const QString& deckName,
+                         QWidget *parent)
     : QWidget(parent),
       deckManager_(manager),
+      deckName_(deckName),
       currentIndex_(0)
 {
-    // Copy & shuffle the cards
-    cards_ = deckManager_->getFlashcards().toVector();
+    // Initial load
+    cards_ = deckManager_->getFlashcards(deckName_).toVector();
     std::mt19937 rng(QRandomGenerator::global()->generate());
     std::shuffle(cards_.begin(), cards_.end(), rng);
 
@@ -17,21 +20,29 @@ ReviewPanel::ReviewPanel(DeckManager* manager, QWidget *parent)
     loadCurrentCard();
 }
 
+void ReviewPanel::reloadDeck() {
+    cards_ = deckManager_->getFlashcards(deckName_).toVector();
+    std::mt19937 rng(QRandomGenerator::global()->generate());
+    std::shuffle(cards_.begin(), cards_.end(), rng);
+    currentIndex_ = 0;
+    loadCurrentCard();
+}
+
 void ReviewPanel::setupUI() {
     layout_ = new QVBoxLayout(this);
 
-    // Question/Front label
+    // Card text label
     cardLabel_ = new QLabel(this);
     cardLabel_->setAlignment(Qt::AlignCenter);
     cardLabel_->setWordWrap(true);
     layout_->addWidget(cardLabel_);
 
-    // Exit button (was Flip)
+    // Exit Review Mode button
     exitButton_ = new QPushButton(tr("Exit Review Mode"), this);
     connect(exitButton_, &QPushButton::clicked, this, &ReviewPanel::exitReview);
     layout_->addWidget(exitButton_);
 
-    // Quiz option buttons (hidden for flip cards)
+    // Quiz option buttons (hidden initially)
     for (int i = 0; i < 4; ++i) {
         QPushButton* btn = new QPushButton(this);
         btn->hide();
@@ -40,7 +51,7 @@ void ReviewPanel::setupUI() {
         layout_->addWidget(btn);
     }
 
-    // Next card button
+    // Next Card button
     nextButton_ = new QPushButton(tr("Next Card"), this);
     connect(nextButton_, &QPushButton::clicked, this, &ReviewPanel::showNextCard);
     layout_->addWidget(nextButton_);
@@ -49,7 +60,6 @@ void ReviewPanel::setupUI() {
 }
 
 void ReviewPanel::loadCurrentCard() {
-    // If no cards, show message and only Exit
     if (cards_.isEmpty()) {
         cardLabel_->setText(tr("No cards to review."));
         for (auto* btn : optionButtons_) btn->hide();
@@ -58,13 +68,12 @@ void ReviewPanel::loadCurrentCard() {
         return;
     }
 
-    // Load current card
     const Flashcard& card = cards_.at(currentIndex_);
     nextButton_->setEnabled(true);
     exitButton_->show();
 
     if (card.isQuizCard()) {
-        // Quiz mode UI
+        // Quiz mode
         cardLabel_->setText(card.getFrontText());
         correctAnswer_ = card.getOptions().at(card.getCorrectOptionIndex());
         for (int i = 0; i < optionButtons_.size(); ++i) {
@@ -72,7 +81,7 @@ void ReviewPanel::loadCurrentCard() {
             optionButtons_[i]->show();
         }
     } else {
-        // Flip mode UI
+        // Flip mode
         cardLabel_->setText(card.getFrontText());
         for (auto* btn : optionButtons_) btn->hide();
     }
@@ -94,14 +103,6 @@ void ReviewPanel::checkQuizAnswer() {
         correct ? tr("Correct!") : tr("Incorrect"),
         correct ? tr("Well done!") : tr("Answer: ") + correctAnswer_
     );
-}
-
-void ReviewPanel::reloadDeck() {
-  cards_ = deckManager_->getFlashcards().toVector();
-  std::mt19937 rng(QRandomGenerator::global()->generate());
-  std::shuffle(cards_.begin(), cards_.end(), rng);
-  currentIndex_ = 0;
-  loadCurrentCard();
 }
 
 void ReviewPanel::exitReview() {

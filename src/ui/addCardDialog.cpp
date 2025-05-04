@@ -1,0 +1,168 @@
+#include "addCardDialog.h"
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QMessageBox>
+
+AddCardDialog::AddCardDialog(DeckManager* manager,
+                             const QString& initialDeck,
+                             QWidget* parent)
+    : QDialog(parent),
+      m_deckManager(manager),
+      m_initialDeck(initialDeck)
+{
+    setupUI();
+    setWindowTitle(tr("Add Card to \"%1\"").arg(initialDeck));
+    resize(400, 300);
+}
+
+void AddCardDialog::setupUI() {
+    auto* mainLayout = new QVBoxLayout(this);
+
+    // Top controls: Type and Deck selectors
+    auto* topLayout = new QHBoxLayout();
+    m_typeSelector = new QComboBox(this);
+    m_typeSelector->addItems({ tr("Flip"), tr("Quiz") });
+    connect(m_typeSelector, &QComboBox::currentTextChanged,
+            this, &AddCardDialog::onTypeChanged);
+
+    m_deckSelector = new QComboBox(this);
+    m_deckSelector->addItems(m_deckManager->getDeckNames());
+    m_deckSelector->setCurrentText(m_initialDeck);
+
+    topLayout->addWidget(new QLabel(tr("Type:"), this));
+    topLayout->addWidget(m_typeSelector);
+    topLayout->addStretch();
+    topLayout->addWidget(new QLabel(tr("Deck:"), this));
+    topLayout->addWidget(m_deckSelector);
+
+    mainLayout->addLayout(topLayout);
+
+    // Stacked pages for inputs
+    m_stack = new QStackedWidget(this);
+
+    // Flip page
+    m_flipPage = new QWidget(this);
+    {
+        auto* flipLayout = new QVBoxLayout(m_flipPage);
+        flipLayout->addWidget(new QLabel(tr("Question:"), this));
+        m_flipQuestionInput = new QLineEdit(this);
+        flipLayout->addWidget(m_flipQuestionInput);
+        flipLayout->addWidget(new QLabel(tr("Answer:"), this));
+        m_flipAnswerInput = new QLineEdit(this);
+        flipLayout->addWidget(m_flipAnswerInput);
+    }
+    m_stack->addWidget(m_flipPage);
+
+    // Quiz page
+    m_quizPage = new QWidget(this);
+    {
+        auto* quizLayout = new QVBoxLayout(m_quizPage);
+        quizLayout->addWidget(new QLabel(tr("Question:"), this));
+        m_quizQuestionInput = new QLineEdit(this);
+        quizLayout->addWidget(m_quizQuestionInput);
+        for (int i = 0; i < 4; ++i) {
+            m_quizOptionInputs[i] = new QLineEdit(this);
+            m_quizOptionInputs[i]->setPlaceholderText(tr("Option %1").arg(i + 1));
+            quizLayout->addWidget(m_quizOptionInputs[i]);
+        }
+        quizLayout->addWidget(new QLabel(tr("Correct Option:"), this));
+        m_quizCorrectSelector = new QComboBox(this);
+        m_quizCorrectSelector->addItems({ tr("Option 1"),
+                                          tr("Option 2"),
+                                          tr("Option 3"),
+                                          tr("Option 4") });
+        quizLayout->addWidget(m_quizCorrectSelector);
+    }
+    m_stack->addWidget(m_quizPage);
+
+    mainLayout->addWidget(m_stack);
+
+    // Buttons at bottom
+    auto* buttonLayout = new QHBoxLayout();
+    m_addButton = new QPushButton(tr("Add"), this);
+    connect(m_addButton, &QPushButton::clicked, this, &AddCardDialog::onAddClicked);
+    m_closeButton = new QPushButton(tr("Close"), this);
+    connect(m_closeButton, &QPushButton::clicked, this, &AddCardDialog::onCloseClicked);
+
+    buttonLayout->addStretch();
+    buttonLayout->addWidget(m_addButton);
+    buttonLayout->addWidget(m_closeButton);
+    mainLayout->addLayout(buttonLayout);
+
+    // Initialize to Flip page
+    m_stack->setCurrentIndex(0);
+}
+
+void AddCardDialog::onTypeChanged(const QString& type) {
+    if (type == tr("Flip")) {
+        m_stack->setCurrentWidget(m_flipPage);
+    } else {
+        m_stack->setCurrentWidget(m_quizPage);
+    }
+}
+
+void AddCardDialog::onAddClicked() {
+    const QString deck = m_deckSelector->currentText();
+
+    if (m_typeSelector->currentText() == tr("Flip")) {
+        QString q = m_flipQuestionInput->text().trimmed();
+        QString a = m_flipAnswerInput->text().trimmed();
+        if (q.isEmpty() || a.isEmpty()) {
+            QMessageBox::warning(this, tr("Missing Data"),
+                                 tr("Please fill out both question and answer."));
+            return;
+        }
+        Flashcard card(q, a);
+        if (!m_deckManager->addFlashcardToDeck(deck, card)) {
+            QMessageBox::critical(this, tr("Error"),
+                                  tr("Failed to add card to deck."));
+            return;
+        }
+        clearFlipInputs();
+
+    } else {
+        QString q = m_quizQuestionInput->text().trimmed();
+        if (q.isEmpty()) {
+            QMessageBox::warning(this, tr("Missing Data"),
+                                 tr("Please enter a question."));
+            return;
+        }
+        QStringList opts;
+        for (int i = 0; i < 4; ++i) {
+            QString o = m_quizOptionInputs[i]->text().trimmed();
+            if (o.isEmpty()) {
+                QMessageBox::warning(this, tr("Missing Data"),
+                                     tr("Please fill in all options."));
+                return;
+            }
+            opts << o;
+        }
+        int idx = m_quizCorrectSelector->currentIndex();
+        Flashcard card(q, opts, idx);
+        if (!m_deckManager->addFlashcardToDeck(deck, card)) {
+            QMessageBox::critical(this, tr("Error"),
+                                  tr("Failed to add quiz card."));
+            return;
+        }
+        clearQuizInputs();
+    }
+
+    emit cardAdded(deck);
+}
+
+void AddCardDialog::onCloseClicked() {
+    accept();
+}
+
+void AddCardDialog::clearFlipInputs() {
+    m_flipQuestionInput->clear();
+    m_flipAnswerInput->clear();
+}
+
+void AddCardDialog::clearQuizInputs() {
+    m_quizQuestionInput->clear();
+    for (auto* w : m_quizOptionInputs) w->clear();
+    m_quizCorrectSelector->setCurrentIndex(0);
+}
+

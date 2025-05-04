@@ -1,72 +1,48 @@
 #include "deckmanager.h"
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QDir>
-#include <QDebug>
 
-DeckManager::DeckManager(QObject *parent)
+DeckManager::DeckManager(QObject* parent)
     : QObject(parent)
 {
-    // Save the deck in the application's current directory.
-    m_filePath = QDir::currentPath() + "/deck.json";
-    loadDeck();
+    // Optionally create a default deck:
+    m_decks.insert("Default", {});
 }
 
-QVector<Flashcard> DeckManager::getFlashcards() const {
-    return m_flashcards;
+QStringList DeckManager::getDeckNames() const {
+    return m_decks.keys();
 }
 
-bool DeckManager::addFlashcard(const Flashcard &card) {
-    m_flashcards.append(card);
-    if (!saveDeck()) {
-        return false;
-    }
-    emit deckUpdated();
+bool DeckManager::createDeck(const QString& name) {
+    if (name.isEmpty() || m_decks.contains(name)) return false;
+    m_decks.insert(name, {});
     return true;
 }
 
-bool DeckManager::loadDeck() {
-    QFile file(m_filePath);
-    if (!file.exists())
-        return true; // No deck yet; this is not an error.
-
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning("Could not open deck file for reading.");
+bool DeckManager::renameDeck(const QString& oldName, const QString& newName) {
+    if (!m_decks.contains(oldName) || newName.isEmpty() || m_decks.contains(newName))
         return false;
-    }
-
-    QByteArray data = file.readAll();
-    file.close();
-
-    QJsonDocument doc = QJsonDocument::fromJson(data);
-    if (!doc.isArray())
-        return false;
-
-    QJsonArray arr = doc.array();
-    m_flashcards.clear();
-    for (const QJsonValue &val : arr) {
-        if (val.isObject()) {
-            m_flashcards.append(Flashcard::fromJson(val.toObject()));
-        }
-    }
+    m_decks.insert(newName, m_decks.take(oldName));
     return true;
 }
 
-bool DeckManager::saveDeck() {
-    QJsonArray arr;
-    for (const Flashcard &card : m_flashcards) {
-        arr.append(card.toJson());
-    }
+bool DeckManager::deleteDeck(const QString& name) {
+    return m_decks.remove(name) > 0;
+}
 
-    QJsonDocument doc(arr);
-    qDebug() << "File path is:" << m_filePath;
-    QFile file(m_filePath);
-    if (!file.open(QIODevice::WriteOnly)) {
-        qWarning("Could not open deck file for writing.");
-        return false;
-    }
-    file.write(doc.toJson());
-    file.close();
+QVector<Flashcard> DeckManager::getFlashcards(const QString& deckName) const {
+    return m_decks.value(deckName);
+}
+
+bool DeckManager::addFlashcardToDeck(const QString& deckName, const Flashcard& card) {
+    if (!m_decks.contains(deckName)) return false;
+    m_decks[deckName].append(card);
     return true;
 }
+
+bool DeckManager::removeFlashcardFromDeck(const QString& deckName, int index) {
+    if (!m_decks.contains(deckName)) return false;
+    auto& vec = m_decks[deckName];
+    if (index < 0 || index >= vec.size()) return false;
+    vec.removeAt(index);
+    return true;
+}
+

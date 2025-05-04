@@ -13,7 +13,12 @@ class ReviewPanel : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ReviewPanel(DeckManager* manager, QWidget *parent = nullptr);
+    // Now takes deckName so it can fetch the right cards
+    explicit ReviewPanel(DeckManager* manager,
+                         const QString& deckName,
+                         QWidget *parent = nullptr);
+
+    // Reload the deck (e.g. when cards have changed)
     void reloadDeck();
 
 signals:
@@ -25,17 +30,18 @@ private slots:
     void exitReview();
 
 private:
-    DeckManager* deckManager_;
+    DeckManager*   deckManager_;
+    QString        deckName_;
     QVector<Flashcard> cards_;
-    int currentIndex_;
+    int            currentIndex_;
 
     // UI elements
-    QVBoxLayout* layout_;
-    QLabel* cardLabel_;
-    QPushButton* exitButton_;       // Exit Review Mode
-    QPushButton* nextButton_;
+    QVBoxLayout*   layout_;
+    QLabel*        cardLabel_;
+    QPushButton*   exitButton_;    // Exit Review Mode
+    QPushButton*   nextButton_;
     QVector<QPushButton*> optionButtons_;
-    QString correctAnswer_;
+    QString        correctAnswer_;
 
     void setupUI();
     void loadCurrentCard();

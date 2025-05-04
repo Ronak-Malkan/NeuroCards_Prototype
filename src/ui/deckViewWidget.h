@@ -2,20 +2,35 @@
 #define DECKVIEWWIDGET_H
 
 #include <QWidget>
-
-class QListWidget;
-class DeckManager;
+#include <QListWidget>
+#include <QString>
+#include "../core/deckmanager.h"
+#include "../core/flashcard.h"
 
 class DeckViewWidget : public QWidget {
     Q_OBJECT
+
 public:
-    explicit DeckViewWidget(DeckManager *deckManager, QWidget *parent = nullptr);
-//    void refreshView();
+    // Now takes a deckName so it knows which deck to show
+    explicit DeckViewWidget(DeckManager* deckManager,
+                            const QString& deckName,
+                            QWidget* parent = nullptr);
+
+    // Refresh list of cards in the current deck
     void refreshList();
 
+signals:
+    // Emitted when a card is clicked for preview
+    void cardClicked(const Flashcard& card);
+
 private:
-    QListWidget *m_listWidget;
-    DeckManager *m_deckManager;
+    DeckManager* m_deckManager;
+    QString      m_deckName;
+    QListWidget* m_listWidget;
+
+    void setupUI();
+    void connectSignals();
 };
 
 #endif // DECKVIEWWIDGET_H
+
