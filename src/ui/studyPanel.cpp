@@ -3,6 +3,7 @@
 #include <random>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QFont>
 
 StudyPanel::StudyPanel(DeckManager* manager,
                        const QString& deckName,
@@ -39,22 +40,31 @@ void StudyPanel::setupUI() {
     m_cardLabel = new ClickableLabel(this);
     m_cardLabel->setAlignment(Qt::AlignCenter);
     m_cardLabel->setWordWrap(true);
+
+    QFont f = m_cardLabel->font();
+    f.setPointSize(24);
+    m_cardLabel->setFont(f);
+    m_cardLabel->setMinimumHeight(200);
+
     m_layout->addWidget(m_cardLabel);
     connect(m_cardLabel, &ClickableLabel::clicked, this, &StudyPanel::flipCard);
 
     // Prev / Next / Exit row
     auto* btnRow = new QHBoxLayout();
     m_prevButton = new QPushButton(tr("Prev"), this);
+    m_prevButton->setFixedSize(80, 40);
     connect(m_prevButton, &QPushButton::clicked, this, &StudyPanel::showPrevCard);
     btnRow->addWidget(m_prevButton);
 
     m_nextButton = new QPushButton(tr("Next"), this);
+    m_nextButton->setFixedSize(80, 40);
     connect(m_nextButton, &QPushButton::clicked, this, &StudyPanel::showNextCard);
     btnRow->addWidget(m_nextButton);
 
     btnRow->addStretch();
 
     m_exitButton = new QPushButton(tr("Exit"), this);
+    m_exitButton->setFixedSize(80, 40);
     connect(m_exitButton, &QPushButton::clicked, this, &StudyPanel::exitStudy);
     btnRow->addWidget(m_exitButton);
 
