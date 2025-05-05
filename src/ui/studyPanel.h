@@ -36,6 +36,7 @@ public:
 
     // Reload and reshuffle the current deck
     void reloadDeck();
+    void setDueOnly(bool dueOnly);
 
 signals:
     // Sent when the user hits "Exit"
@@ -45,24 +46,21 @@ private slots:
     void showPrevCard();
     void showNextCard();
     void flipCard();
-    void markCorrect();
-    void markWrong();
+    void onGradeClicked();
     void studyExit();
 
 private:
     DeckManager*       m_deckManager;
     QString            m_deckName;
-    QVector<Flashcard> m_cards;
     QVector<int>       m_orderIndices;     // maps display order to original indices
     int                m_currentIndex;
     bool               m_showingFront;
+    bool               m_dueOnly;
 
     // UI widgets
     QVBoxLayout*       m_layout;
     ClickableLabel*    m_cardLabel;
-    QHBoxLayout*       m_responseLayout;
-    QPushButton*       m_correctButton;
-    QPushButton*       m_wrongButton;
+    QPushButton*       m_gradeButtons[4];  // Again, Hard, Good, Easy
     QHBoxLayout*       m_navLayout;
     QPushButton*       m_prevButton;
     QPushButton*       m_nextButton;

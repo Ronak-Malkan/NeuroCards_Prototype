@@ -49,18 +49,29 @@ bool DeckManager::deleteDeck(const QString& name) {
     return removed;
 }
 
-bool DeckManager::recordCardResult(const QString& deckName, int index, bool wasCorrect) {
+bool DeckManager::recordCardResult(const QString& deckName, int index, int quality) {
     if (!m_decks.contains(deckName)) return false;
     auto& vec = m_decks[deckName];
     if (index < 0 || index >= vec.size()) return false;
-    vec[index].recordResult(wasCorrect);
+
+    vec[index].recordResult(quality);
+
     saveToFile();
     return true;
 }
 
-// Cards
 QVector<Flashcard> DeckManager::getFlashcards(const QString& deckName) const {
     return m_decks.value(deckName);
+}
+
+
+QVector<Flashcard> DeckManager::getDueFlashcards(const QString& deckName) const {
+    QVector<Flashcard> due;
+    for (const Flashcard& card : m_decks.value(deckName)) {
+        if (card.getNextReview() <= QDate::currentDate())
+            due.append(card);
+    }
+    return due;
 }
 
 bool DeckManager::addFlashcardToDeck(const QString& deckName, const Flashcard& card) {
@@ -109,7 +120,7 @@ void DeckManager::loadFromFile() {
         QVector<Flashcard> cards;
         for (auto v : arr)
             cards.append(Flashcard::fromJson(v.toObject()));
-        m_decks.insert(deckName, cards);
+        m_decks[deckName] = std::move(cards);
     }
 }
 

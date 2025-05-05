@@ -1,3 +1,4 @@
+
 #ifndef DECKMANAGER_H
 #define DECKMANAGER_H
 
@@ -20,10 +21,11 @@ public:
     bool createDeck(const QString& name);
     bool renameDeck(const QString& oldName, const QString& newName);
     bool deleteDeck(const QString& name);
-    bool recordCardResult(const QString& deckName, int index, bool wasCorrect);
+    bool recordCardResult(const QString& deckName, int index, int quality);
 
     // Card management
     QVector<Flashcard> getFlashcards(const QString& deckName) const;
+    QVector<Flashcard> getDueFlashcards(const QString& deckName) const;
     bool addFlashcardToDeck(const QString& deckName, const Flashcard& card);
     bool removeFlashcardFromDeck(const QString& deckName, int index);
     bool updateFlashcardInDeck(const QString& deckName, int index, const Flashcard& card);

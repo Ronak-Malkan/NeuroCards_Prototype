@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_deckListPanel, &DeckListPanel::deckSelected,
             this, [&](const QString& name){
         m_deckDetailPanel->setDeck(name);
+        m_deckDetailPanel->refreshList();
         m_stack->setCurrentWidget(m_deckDetailPanel);
     });
 
@@ -43,13 +44,20 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // DeckDetail → StudyModePanel
-    connect(m_deckDetailPanel, &DeckDetailPanel::startStudy,
+    // Study Due only
+    connect(m_deckDetailPanel, &DeckDetailPanel::studyDue,
             this, [&](const QString& name){
+        m_studyPanel->setDueOnly(true);
         m_studyPanel->setDeck(name);
-        m_studyPanel->reloadDeck();
         m_stack->setCurrentWidget(m_studyPanel);
     });
-
+    // Study Full deck
+    connect(m_deckDetailPanel, &DeckDetailPanel::studyAll,
+            this, [&](const QString& name){
+        m_studyPanel->setDueOnly(false);
+        m_studyPanel->setDeck(name);
+        m_stack->setCurrentWidget(m_studyPanel);
+    });
     // DeckDetail → AddCardDialog
     connect(m_deckDetailPanel, &DeckDetailPanel::addCardRequested,
             this, [&](const QString& name){

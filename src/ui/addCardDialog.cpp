@@ -1,3 +1,4 @@
+
 #include "addCardDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,25 +15,25 @@ AddCardDialog::AddCardDialog(DeckManager* manager,
       m_editIndex(editIndex)
 {
     setupUI();
-    setWindowTitle(editIndex>=0
-        ? tr("Edit Card in “%1”").arg(deckName)
-        : tr("Add Card to “%1”").arg(deckName));
-    
-    if (m_editIndex >= 0) {
-        const auto cards = m_deckManager->getFlashcards(deckName);
+    auto cards = m_deckManager->getFlashcards(m_initialDeck);
+    if (m_editIndex >= 0 && m_editIndex < cards.size()) {
+        // populate fields from cards[m_editIndex]
         const Flashcard& c = cards.at(m_editIndex);
-        m_typeSelector->setCurrentText(c.isQuizCard() ? tr("Quiz") : tr("Flip"));
-        onTypeChanged(m_typeSelector->currentText());
         if (c.isQuizCard()) {
+            m_typeSelector->setCurrentText(tr("Quiz"));
             m_quizQuestionInput->setText(c.getFrontText());
-            for (int i = 0; i < 4; ++i)
-                m_quizOptionInputs[i]->setText(c.getOptions().at(i));
-            m_quizCorrectSelector->setCurrentIndex(c.getCorrectOptionIndex());
+            auto opts = c.getOptions();
+            for (int i = 0; i < opts.size(); ++i)
+                m_quizOptionInputs[i]->setText(opts[i]);
+                m_quizCorrectSelector->setCurrentIndex(c.getCorrectOptionIndex());
         } else {
+            m_typeSelector->setCurrentText(tr("Flip"));
             m_flipQuestionInput->setText(c.getFrontText());
             m_flipAnswerInput->setText(c.getBackText());
         }
-        m_addButton->setText(tr("Save"));
+    } else {
+        // treat as “new card”
+        m_editIndex = -1;
     }
     
     resize(400, 300);

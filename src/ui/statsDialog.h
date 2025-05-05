@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QTableWidget>
+#include <QString>
+#include <QShowEvent>
 #include "../core/deckmanager.h"
 #include "../core/flashcard.h"
 
@@ -13,10 +15,13 @@ public:
                          const QString& deckName,
                          QWidget* parent = nullptr);
 
+protected:
+    void showEvent(QShowEvent* ev) override;
+
 private:
-    DeckManager* m_deckManager;
-    QString      m_deckName;
-    QTableWidget* m_table;
+    DeckManager*    m_deckManager;
+    QString         m_deckName;
+    QTableWidget*   m_table;
 
     void setupUI();
     void populateStats();
