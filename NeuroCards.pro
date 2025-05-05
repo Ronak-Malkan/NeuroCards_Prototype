@@ -16,7 +16,8 @@ SOURCES += \
     src/ui/cardDisplayWidget.cpp \
     src/ui/deckListPanel.cpp \
     src/ui/deckDetailPanel.cpp \
-    src/ui/addCardDialog.cpp 
+    src/ui/addCardDialog.cpp \
+    src/ui/statsDialog.cpp 
 
 HEADERS += \
     src/core/flashcard.h \
@@ -29,4 +30,5 @@ HEADERS += \
     src/ui/cardDisplayWidget.h \
     src/ui/deckListPanel.h \
     src/ui/deckDetailPanel.h \
-    src/ui/addCardDialog.h
+    src/ui/addCardDialog.h \
+    src/ui/statsDialog.h

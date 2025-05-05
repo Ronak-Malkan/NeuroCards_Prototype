@@ -7,35 +7,35 @@
 
 class Flashcard {
 public:
-    enum class CardType { Flip, Quiz };
-
-    // Flip constructor
+    // Flip card constructor
     Flashcard(const QString& front, const QString& back);
 
-    // Quiz constructor
-    Flashcard(const QString& question, const QStringList& options, int correctIndex);
+    // Quiz card constructor
+    Flashcard(const QString& front, const QStringList& options, int correctIndex);
 
-    // JSON serialization
+    bool isQuizCard() const;
+    QString getFrontText() const;
+    QString getBackText() const;
+    QStringList getOptions() const;
+    int getCorrectOptionIndex() const;
+
+    // Stats
+    void recordResult(bool correct);
+    int getAttempts() const;
+    int getCorrectCount() const;
+
+    // JSON persistence
     QJsonObject toJson() const;
     static Flashcard fromJson(const QJsonObject& obj);
 
-    // Getters
-    QString getFrontText() const;
-    QString getBackText() const;
-    CardType getType() const;
-    QStringList getOptions() const;
-    int getCorrectOptionIndex() const;
-    bool isQuizCard() const;
-
 private:
-    QString frontText_;
-    QString backText_;
-    CardType type_;
+    QString     m_front;
+    QString     m_back;
+    QStringList m_options;
+    int         m_correctIndex;
 
-    // For Quiz cards
-    QStringList options_;
-    int correctOptionIndex_;
+    // Performance tracking
+    int         m_attempts;
+    int         m_correctCount;
 };
-
 #endif // FLASHCARD_H
-

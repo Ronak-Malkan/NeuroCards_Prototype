@@ -6,10 +6,11 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QVector>
+#include <QHBoxLayout>
 #include "../core/deckmanager.h"
 #include "../core/flashcard.h"
 
-// A QLabel subclass that emits clicked() when pressed
+// Clickable label to flip
 class ClickableLabel : public QLabel {
     Q_OBJECT
 public:
@@ -17,7 +18,7 @@ public:
 signals:
     void clicked();
 protected:
-    void mousePressEvent(QMouseEvent* ev) override {
+    void mousePressEvent(QMouseEvent*) override {
         emit clicked();
     }
 };
@@ -27,34 +28,42 @@ class StudyPanel : public QWidget {
 
 public:
     explicit StudyPanel(DeckManager* manager,
-                         const QString& deckName,
-                         QWidget* parent = nullptr);
+                        const QString& deckName,
+                        QWidget* parent = nullptr);
 
-    // Reloads and reshuffles the deck (e.g. after adding cards)
-    void reloadDeck();
+    // Swap in a different deck at runtime
     void setDeck(const QString& deckName);
 
+    // Reload and reshuffle the current deck
+    void reloadDeck();
+
 signals:
-    // Emitted when the user clicks “Exit”
+    // Sent when the user hits "Exit"
     void exitStudy();
 
 private slots:
     void showPrevCard();
     void showNextCard();
     void flipCard();
-    void onExitClicked();
+    void markCorrect();
+    void markWrong();
+    void studyExit();
 
 private:
     DeckManager*       m_deckManager;
     QString            m_deckName;
     QVector<Flashcard> m_cards;
+    QVector<int>       m_orderIndices;     // maps display order to original indices
     int                m_currentIndex;
     bool               m_showingFront;
-    QString            m_correctAnswer;
 
-    // UI
+    // UI widgets
     QVBoxLayout*       m_layout;
     ClickableLabel*    m_cardLabel;
+    QHBoxLayout*       m_responseLayout;
+    QPushButton*       m_correctButton;
+    QPushButton*       m_wrongButton;
+    QHBoxLayout*       m_navLayout;
     QPushButton*       m_prevButton;
     QPushButton*       m_nextButton;
     QPushButton*       m_exitButton;
@@ -64,4 +73,3 @@ private:
 };
 
 #endif // STUDYPANEL_H
-

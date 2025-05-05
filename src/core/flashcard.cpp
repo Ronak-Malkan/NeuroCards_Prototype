@@ -2,71 +2,103 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
-// Flip card constructor
+// Flip card
 Flashcard::Flashcard(const QString& front, const QString& back)
-    : frontText_(front), backText_(back), type_(CardType::Flip), correctOptionIndex_(-1) {}
-
-// Quiz card constructor
-Flashcard::Flashcard(const QString& question, const QStringList& options, int correctIndex)
-    : frontText_(question), backText_(""), type_(CardType::Quiz),
-      options_(options), correctOptionIndex_(correctIndex) {}
-
-QString Flashcard::getFrontText() const {
-    return frontText_;
+    : m_front(front),
+    m_back(back),
+    m_options(),
+    m_correctIndex(-1),
+    m_attempts(0),
+    m_correctCount(0)
+{
 }
 
-QString Flashcard::getBackText() const {
-    return backText_;
-}
-
-Flashcard::CardType Flashcard::getType() const {
-    return type_;
-}
-
-QStringList Flashcard::getOptions() const {
-    return options_;
-}
-
-int Flashcard::getCorrectOptionIndex() const {
-    return correctOptionIndex_;
+// Quiz card
+Flashcard::Flashcard(const QString& front, const QStringList& options, int correctIndex)
+    : m_front(front),
+    m_back(QString()),
+    m_options(options),
+    m_correctIndex(correctIndex),
+    m_attempts(0),
+    m_correctCount(0)
+{
 }
 
 bool Flashcard::isQuizCard() const {
-    return type_ == CardType::Quiz;
+    return m_correctIndex >= 0 && m_correctIndex < m_options.size();
 }
 
+QString Flashcard::getFrontText() const {
+    return m_front;
+}
+
+QString Flashcard::getBackText() const {
+    return m_back;
+}
+
+QStringList Flashcard::getOptions() const {
+    return m_options;
+}
+
+int Flashcard::getCorrectOptionIndex() const {
+    return m_correctIndex;
+}
+
+// Stats
+void Flashcard::recordResult(bool correct) {
+    m_attempts++;
+    if (correct) m_correctCount++;
+}
+
+int Flashcard::getAttempts() const { return m_attempts; }
+int Flashcard::getCorrectCount() const { return m_correctCount; }
+
+// JSON
 QJsonObject Flashcard::toJson() const {
     QJsonObject obj;
-    obj["type"] = (type_ == CardType::Quiz) ? "quiz" : "flip";
-    obj["front"] = frontText_;
-    obj["back"] = backText_;
-
-    if (type_ == CardType::Quiz) {
-        QJsonArray opts;
-        for (const QString& opt : options_) {
-            opts.append(opt);
-        }
-        obj["options"] = opts;
-        obj["correctIndex"] = correctOptionIndex_;
+    if (isQuizCard()) {
+        obj["type"] = "quiz";
+        obj["front"] = m_front;
+        QJsonArray arr;
+        for (const QString& opt : m_options)
+            arr.append(opt);
+        obj["options"] = arr;
+        obj["correctIndex"] = m_correctIndex;
+    } else {
+        obj["type"] = "flip";
+        obj["front"] = m_front;
+        obj["back"] = m_back;
     }
-
+    // Add stats
+    QJsonObject stats;
+    stats["attempts"] = m_attempts;
+    stats["correctCount"] = m_correctCount;
+    obj["stats"] = stats;
     return obj;
 }
 
 Flashcard Flashcard::fromJson(const QJsonObject& obj) {
-    QString typeStr = obj["type"].toString();
-    QString front = obj["front"].toString();
-    QString back = obj["back"].toString();
-
-    if (typeStr == "quiz") {
-        QJsonArray optsArray = obj["options"].toArray();
-        QStringList options;
-        for (const QJsonValue& val : optsArray) {
-            options << val.toString();
+    QString type = obj.value("type").toString();
+    Flashcard card = [&]() {
+        if (type == "quiz") {
+            QString front = obj.value("front").toString();
+            QJsonArray arr = obj.value("options").toArray();
+            QStringList options;
+            for (const QJsonValue& v : arr)
+                options.append(v.toString());
+            int correct = obj.value("correctIndex").toInt();
+            return Flashcard(front, options, correct);
+        } else {
+            QString front = obj.value("front").toString();
+            QString back  = obj.value("back").toString();
+            return Flashcard(front, back);
         }
-        int correctIdx = obj["correctIndex"].toInt();
-        return Flashcard(front, options, correctIdx);
-    } else {
-        return Flashcard(front, back);
+    }();
+    // Read stats if present
+    if (obj.contains("stats") && obj.value("stats").isObject()) {
+        QJsonObject s = obj.value("stats").toObject();
+        card.m_attempts     = s.value("attempts").toInt(0);
+        card.m_correctCount = s.value("correctCount").toInt(0);
     }
+    return card;
 }

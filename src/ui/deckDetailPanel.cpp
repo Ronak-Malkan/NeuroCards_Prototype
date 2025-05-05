@@ -1,6 +1,8 @@
 #include "deckDetailPanel.h"
+#include "addCardDialog.h"
+#include "statsDialog.h"
 #include <QMessageBox>
-#include <QDebug>
+#include <QMenu>
 
 DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
     : QWidget(parent), m_deckManager(manager)
@@ -20,16 +22,19 @@ void DeckDetailPanel::setupUI() {
 
     // Stats bar: count, study, add
     m_countLabel = new QLabel(tr("Cards: 0"), this);
+    m_statsButton = new QPushButton(tr("Stats"), this);
     m_studyButton = new QPushButton(tr("Study"), this);
     m_addCardButton = new QPushButton(tr("Add Card"), this);
     QHBoxLayout* statsLayout = new QHBoxLayout();
     statsLayout->addWidget(m_countLabel);
     statsLayout->addStretch();
+    statsLayout->addWidget(m_statsButton);
     statsLayout->addWidget(m_studyButton);
     statsLayout->addWidget(m_addCardButton);
 
     // Card list
     m_listWidget = new QListWidget(this);
+    m_listWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     // Main layout
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
@@ -40,10 +45,18 @@ void DeckDetailPanel::setupUI() {
 }
 
 void DeckDetailPanel::connectSignals() {
-    connect(m_backButton, &QPushButton::clicked, this, &DeckDetailPanel::onBackClicked);
-    connect(m_studyButton, &QPushButton::clicked, this, &DeckDetailPanel::onStudyClicked);
-    connect(m_addCardButton, &QPushButton::clicked, this, &DeckDetailPanel::onAddCardClicked);
-    connect(m_listWidget, &QListWidget::itemClicked, this, &DeckDetailPanel::onItemClicked);
+    connect(m_backButton, &QPushButton::clicked,
+            this, &DeckDetailPanel::onBackClicked);
+    connect(m_statsButton, &QPushButton::clicked,
+            this, &DeckDetailPanel::onStatsClicked);
+    connect(m_studyButton, &QPushButton::clicked,
+            this, &DeckDetailPanel::onStudyClicked);
+    connect(m_addCardButton, &QPushButton::clicked,
+            this, &DeckDetailPanel::onAddCardClicked);
+    connect(m_listWidget, &QListWidget::itemClicked,
+            this, &DeckDetailPanel::onItemClicked);
+    connect(m_listWidget, &QListWidget::customContextMenuRequested,
+            this, &DeckDetailPanel::onListContextMenu);
 }
 
 void DeckDetailPanel::setDeck(const QString& deckName) {
@@ -65,8 +78,12 @@ void DeckDetailPanel::onBackClicked() {
     emit backToDeckList();
 }
 
+void DeckDetailPanel::onStatsClicked() {
+    StatsDialog dlg(m_deckManager, m_deckName, this);
+    dlg.exec();
+}
+
 void DeckDetailPanel::onStudyClicked() {
-    qDebug() << "[DeckDetailPanel] Study clicked for deck:" << m_deckName;
     emit startStudy(m_deckName);
 }
 
@@ -80,6 +97,31 @@ void DeckDetailPanel::onItemClicked(QListWidgetItem* item) {
     if (row >= 0 && row < cards.size()) {
         CardPreviewDialog dlg(cards.at(row), this);
         dlg.exec();
+    }
+}
+
+void DeckDetailPanel::onListContextMenu(const QPoint &pos) {
+    QListWidgetItem* item = m_listWidget->itemAt(pos);
+    if (!item) return;
+    int row = m_listWidget->row(item);
+
+    QMenu menu(this);
+    QAction* editAct   = menu.addAction(tr("Edit Card"));
+    QAction* deleteAct = menu.addAction(tr("Delete Card"));
+    QAction* selected = menu.exec(m_listWidget->mapToGlobal(pos));
+
+    if (selected == editAct) {
+        AddCardDialog dlg(m_deckManager, m_deckName, row, this);
+        connect(&dlg, &AddCardDialog::cardEdited,
+                this, [&](const QString&, int){ refreshList(); });
+        dlg.exec();
+
+    } else if (selected == deleteAct) {
+        if (QMessageBox::question(this, tr("Confirm Delete"),
+            tr("Delete this card?")) == QMessageBox::Yes) {
+            m_deckManager->removeFlashcardFromDeck(m_deckName, row);
+            refreshList();
+        }
     }
 }
 

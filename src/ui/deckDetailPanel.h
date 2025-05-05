@@ -28,7 +28,9 @@ private slots:
     void onBackClicked();
     void onStudyClicked();
     void onAddCardClicked();
+    void onStatsClicked();
     void onItemClicked(QListWidgetItem* item);
+    void onListContextMenu(const QPoint &pos);
 
 private:
     DeckManager*    m_deckManager;
@@ -40,6 +42,7 @@ private:
     QLabel*         m_countLabel;
     QPushButton*    m_studyButton;
     QPushButton*    m_addCardButton;
+    QPushButton*    m_statsButton;
     QListWidget*    m_listWidget;
 
     void setupUI();

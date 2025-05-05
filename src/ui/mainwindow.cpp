@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
     // DeckDetail → AddCardDialog
     connect(m_deckDetailPanel, &DeckDetailPanel::addCardRequested,
             this, [&](const QString& name){
-        AddCardDialog dlg(m_deckManager, name, this);
+        AddCardDialog dlg(m_deckManager, name, -1, this);
         connect(&dlg, &AddCardDialog::cardAdded, this, [&](const QString& deck){
             m_deckDetailPanel->setDeck(deck);
             m_stack->setCurrentWidget(m_deckDetailPanel);

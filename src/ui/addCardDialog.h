@@ -9,18 +9,20 @@
 #include <QStackedWidget>
 #include "../core/deckmanager.h"
 #include "../core/flashcard.h"
+#include "addCardDialog.h"
 
 class AddCardDialog : public QDialog {
     Q_OBJECT
 
 public:
     explicit AddCardDialog(DeckManager* manager,
-                           const QString& initialDeck,
+                           const QString& deckName,
+                           int editIndex = -1,
                            QWidget* parent = nullptr);
 
 signals:
-    // Emitted after a card is successfully added
     void cardAdded(const QString& deckName);
+    void cardEdited(const QString& deckName, int index);
 
 private slots:
     void onTypeChanged(const QString& type);
@@ -30,6 +32,7 @@ private slots:
 private:
     DeckManager*    m_deckManager;
     QString         m_initialDeck;
+    int             m_editIndex;
 
     QComboBox*      m_typeSelector;
     QComboBox*      m_deckSelector;
