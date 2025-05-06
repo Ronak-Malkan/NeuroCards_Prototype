@@ -7,7 +7,7 @@
 #include <QVBoxLayout>
 #include <QVector>
 #include <QHBoxLayout>
-#include "../core/deckmanager.h"
+#include "../core/cardservice.h"
 #include "../core/flashcard.h"
 
 // Clickable label to flip
@@ -27,7 +27,7 @@ class StudyPanel : public QWidget {
     Q_OBJECT
 
 public:
-    explicit StudyPanel(DeckManager* manager,
+    explicit StudyPanel(CardService* cardService,
                         const QString& deckName,
                         QWidget* parent = nullptr);
 
@@ -50,7 +50,7 @@ private slots:
     void studyExit();
 
 private:
-    DeckManager*       m_deckManager;
+    CardService*       m_cardService;
     QString            m_deckName;
     QVector<int>       m_orderIndices;     // maps display order to original indices
     int                m_currentIndex;

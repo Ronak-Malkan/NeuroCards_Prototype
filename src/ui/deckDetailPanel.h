@@ -3,44 +3,45 @@
 
 #include <QWidget>
 #include <QPushButton>
-#include <QListWidget>
 #include <QLabel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include "../core/deckmanager.h"
+#include <QListWidget>
+#include "../core/cardservice.h"
 
 class DeckDetailPanel : public QWidget {
     Q_OBJECT
-public:
-    explicit DeckDetailPanel(DeckManager* manager, QWidget* parent = nullptr);
 
-    // Set which deck to display
+public:
+    explicit DeckDetailPanel(CardService* cardService, QWidget* parent = nullptr);
+
+    // Change to a different deck
     void setDeck(const QString& deckName);
-    // Refresh list of cards in the current deck
+
+    // Refresh list after external changes
     void refreshList();
 
 signals:
+    void backToDeckList();
     void studyAll(const QString& deckName);
     void studyDue(const QString& deckName);
-    void backToDeckList();
     void addCardRequested(const QString& deckName);
 
 private slots:
-    void onBackClicked();
     void onStatsClicked();
     void onAddCardClicked();
+    void onBackClicked();
     void onItemClicked(QListWidgetItem* item);
-    void onListContextMenu(const QPoint &pos);
+    void onListContextMenu(const QPoint& pos);
 
 private:
-    DeckManager*    m_deckManager;
+    CardService*    m_cardService;  // Changed from DeckManager to CardService
     QString         m_deckName;
+    
     QPushButton*    m_backButton;
     QLabel*         m_titleLabel;
     QLabel*         m_countLabel;
     QPushButton*    m_statsButton;
-    QPushButton*    m_studyAllButton;
     QPushButton*    m_studyDueButton;
+    QPushButton*    m_studyAllButton;
     QPushButton*    m_addCardButton;
     QListWidget*    m_listWidget;
 };

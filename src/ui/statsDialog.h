@@ -5,13 +5,12 @@
 #include <QTableWidget>
 #include <QString>
 #include <QShowEvent>
-#include "../core/deckmanager.h"
-#include "../core/flashcard.h"
+#include "../core/cardservice.h"
 
 class StatsDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit StatsDialog(DeckManager* manager,
+    explicit StatsDialog(CardService* cardService,
                          const QString& deckName,
                          QWidget* parent = nullptr);
 
@@ -19,7 +18,7 @@ protected:
     void showEvent(QShowEvent* ev) override;
 
 private:
-    DeckManager*    m_deckManager;
+    CardService*    m_cardService;
     QString         m_deckName;
     QTableWidget*   m_table;
 

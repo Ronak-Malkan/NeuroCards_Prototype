@@ -4,11 +4,11 @@
 #include <QVBoxLayout>
 #include <QListWidgetItem>
 
-DeckViewWidget::DeckViewWidget(DeckManager* deckManager,
+DeckViewWidget::DeckViewWidget(CardService* cardService,
                                const QString& deckName,
                                QWidget* parent)
     : QWidget(parent),
-      m_deckManager(deckManager),
+      m_cardService(cardService),
       m_deckName(deckName)
 {
     setupUI();
@@ -28,10 +28,10 @@ void DeckViewWidget::connectSignals() {
     connect(m_listWidget, &QListWidget::itemClicked,
             this, [this](QListWidgetItem* item){
         int row = m_listWidget->row(item);
-        auto cards = m_deckManager->getDueFlashcards(m_deckName);
+        auto cards = m_cardService->getDueFlashcards(m_deckName);
         if (row >= 0 && row < cards.size()) {
             // Show preview dialog
-            CardPreviewDialog dlg(m_deckManager,
+            CardPreviewDialog dlg(m_cardService,
                                   m_deckName,
                                   row,
                                   this);
@@ -42,7 +42,7 @@ void DeckViewWidget::connectSignals() {
 
 void DeckViewWidget::refreshList() {
     m_listWidget->clear();
-    auto cards = m_deckManager->getDueFlashcards(m_deckName);
+    auto cards = m_cardService->getDueFlashcards(m_deckName);
     for (Flashcard* card : cards) {
         // Show only the front text
         m_listWidget->addItem(card->getFrontText());

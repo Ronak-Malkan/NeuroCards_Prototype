@@ -2,36 +2,33 @@
 #define DECKLISTPANEL_H
 
 #include <QWidget>
-#include <QString>
 #include <QListWidget>
-#include <QLineEdit>
-#include <QVBoxLayout>
 #include <QPushButton>
-#include "../core/deckmanager.h"
+#include "../core/cardservice.h"
 
 class DeckListPanel : public QWidget {
     Q_OBJECT
+
 public:
-    explicit DeckListPanel(DeckManager* manager, QWidget* parent = nullptr);
+    explicit DeckListPanel(CardService* cardService, QWidget* parent = nullptr);
 
 signals:
     void deckSelected(const QString& deckName);
-    void createDeckRequested();  // existing create deck signal
 
 private slots:
-    void onSearchTextChanged(const QString& text);
+    void onAddDeckClicked();
+    void onDeleteDeckClicked();
+    void onRenameDeckClicked();
     void onItemClicked(QListWidgetItem* item);
-    void onListContextMenu(const QPoint &pos);
+    void onListContextMenu(const QPoint& pos);
+    void refreshList();
 
 private:
-    DeckManager* m_deckManager;
-    QLineEdit*   m_searchInput;
+    CardService* m_cardService;  // Changed from DeckManager to CardService
     QListWidget* m_listWidget;
     QPushButton* m_addDeckButton;
-
-    void setupUI();
-    void connectSignals();
-    void refreshList();
+    QPushButton* m_deleteDeckButton;
+    QPushButton* m_renameDeckButton;
 };
 
 #endif // DECKLISTPANEL_H

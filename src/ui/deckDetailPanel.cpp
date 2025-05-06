@@ -2,16 +2,16 @@
 #include "statsDialog.h"
 #include "addCardDialog.h"
 #include "cardPreviewDialog.h"
-
+#include "../core/flashcard.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QInputDialog>
 #include <QMenu>
 
-DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
+DeckDetailPanel::DeckDetailPanel(CardService* cardService, QWidget* parent)
     : QWidget(parent)
-    , m_deckManager(manager)
+    , m_cardService(cardService)
     , m_deckName          ()
     , m_backButton        (new QPushButton(tr("← Back"), this))
     , m_titleLabel        (new QLabel(this))
@@ -68,7 +68,7 @@ void DeckDetailPanel::setDeck(const QString& deckName) {
 }
 
 void DeckDetailPanel::refreshList() {
-    auto cards = m_deckManager->getFlashcards(m_deckName);
+    auto cards = m_cardService->getFlashcards(m_deckName);
     m_listWidget->clear();
     for (const Flashcard* card : cards)
         m_listWidget->addItem(card->getFrontText());
@@ -76,7 +76,7 @@ void DeckDetailPanel::refreshList() {
 }
 
 void DeckDetailPanel::onStatsClicked() {
-    StatsDialog dlg(m_deckManager, m_deckName, this);
+    StatsDialog dlg(m_cardService, m_deckName, this);
     dlg.exec();
 }
 
@@ -86,7 +86,7 @@ void DeckDetailPanel::onAddCardClicked() {
 
 void DeckDetailPanel::onItemClicked(QListWidgetItem* item) {
     int row = m_listWidget->row(item);
-    CardPreviewDialog dlg(m_deckManager, m_deckName, row, this);
+    CardPreviewDialog dlg(m_cardService, m_deckName, row, this);
     dlg.exec();
 }
 
@@ -96,7 +96,7 @@ void DeckDetailPanel::onListContextMenu(const QPoint& pos) {
 
     int row = m_listWidget->row(item);
     // Fetch full card list to validate
-    auto cards = m_deckManager->getFlashcards(m_deckName);
+    auto cards = m_cardService->getFlashcards(m_deckName);
     if (row < 0 || row >= cards.size()) return;
 
     QMenu menu(this);
@@ -108,13 +108,13 @@ void DeckDetailPanel::onListContextMenu(const QPoint& pos) {
         if (QMessageBox::question(this, tr("Delete Card"),
                                   tr("Are you sure you want to delete this card?")) 
             == QMessageBox::Yes) {
-            m_deckManager->removeFlashcardFromDeck(m_deckName, row);
+            m_cardService->removeCard(m_deckName, row);
             refreshList();
         }
     }
     else if (sel == editAct) {
         // This guard ensures we never pass a bad index
-        AddCardDialog dlg(m_deckManager, m_deckName, row, this);
+        AddCardDialog dlg(m_cardService, m_deckName, row, this);
         if (dlg.exec() == QDialog::Accepted) {
             refreshList();
         }

@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QListWidget>
 #include <QString>
-#include "../core/deckmanager.h"
+#include "../core/cardservice.h"
 #include "../core/flashcard.h"
 
 class DeckViewWidget : public QWidget {
@@ -12,7 +12,7 @@ class DeckViewWidget : public QWidget {
 
 public:
     // Now takes a deckName so it knows which deck to show
-    explicit DeckViewWidget(DeckManager* deckManager,
+    explicit DeckViewWidget(CardService* cardService,
                             const QString& deckName,
                             QWidget* parent = nullptr);
 
@@ -21,10 +21,10 @@ public:
 
 signals:
     // Emitted when a card is clicked for preview
-    void cardClicked(Flashcard* card);
+    void cardClicked(int cardIndex);
 
 private:
-    DeckManager* m_deckManager;
+    CardService* m_cardService;
     QString      m_deckName;
     QListWidget* m_listWidget;
 

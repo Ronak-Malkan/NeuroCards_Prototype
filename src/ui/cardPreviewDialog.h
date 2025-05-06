@@ -3,15 +3,14 @@
 
 #include <QDialog>
 #include <QLabel>
-#include <QPropertyAnimation>
 #include <QGraphicsOpacityEffect>
-#include "../core/deckmanager.h"
-#include "../core/flashcard.h"
+#include <QPropertyAnimation>
+#include "../core/cardservice.h"
 
 class CardPreviewDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit CardPreviewDialog(DeckManager* manager,
+    explicit CardPreviewDialog(CardService* cardService,
                                const QString& deckName,
                                int index,
                                QWidget* parent = nullptr);
@@ -19,19 +18,19 @@ public:
 protected:
     void mousePressEvent(QMouseEvent* ev) override;
 
-private slots:
-    void swapText();
-
 private:
-    DeckManager*          m_deckManager;
-    QString               m_deckName;
-    int                   m_index;
-    QLabel*               m_cardLabel;
-    bool                  m_showingFront;
+    CardService* m_cardService;  // Changed from DeckManager to CardService
+    QString     m_deckName;
+    int         m_index;
+    QLabel*     m_cardLabel;
+
+    // Fade effect
     QGraphicsOpacityEffect* m_opacity;
     QPropertyAnimation*     m_anim;
+    bool                    m_showingFront;
 
     void flip();
+    void swapText();
 };
 
 #endif // CARDPREVIEWDIALOG_H

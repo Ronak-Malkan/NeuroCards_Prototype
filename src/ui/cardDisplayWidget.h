@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QPropertyAnimation>
 #include <QSequentialAnimationGroup>
-#include "../core/flashcard.h"
+#include "../core/flashcard.h"  // We still need this for the Flashcard class
 
 class CardDisplayWidget : public QWidget {
     Q_OBJECT

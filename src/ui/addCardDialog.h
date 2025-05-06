@@ -7,15 +7,13 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QStackedWidget>
-#include "../core/deckmanager.h"
-#include "../core/flashcard.h"
-#include "addCardDialog.h"
+#include "../core/cardservice.h"
 
 class AddCardDialog : public QDialog {
     Q_OBJECT
 
 public:
-    explicit AddCardDialog(DeckManager* manager,
+    explicit AddCardDialog(CardService* cardService,
                            const QString& deckName,
                            int editIndex = -1,
                            QWidget* parent = nullptr);
@@ -30,7 +28,7 @@ private slots:
     void onCloseClicked();
 
 private:
-    DeckManager*    m_deckManager;
+    CardService*     m_cardService;
     QString         m_initialDeck;
     int             m_editIndex;
 

@@ -2,12 +2,14 @@
 #include <QVBoxLayout>
 #include <QHeaderView>
 #include <QTableWidgetItem>
+#include "../core/flashcard.h"
 
-StatsDialog::StatsDialog(DeckManager* manager,
+
+StatsDialog::StatsDialog(CardService* cardService,
                          const QString& deckName,
                          QWidget* parent)
     : QDialog(parent),
-      m_deckManager(manager),
+      m_cardService(cardService),
       m_deckName(deckName),
       m_table(nullptr)
 {
@@ -41,14 +43,13 @@ void StatsDialog::setupUI() {
 }
 
 void StatsDialog::populateStats() {
-    auto cards = m_deckManager->getFlashcards(m_deckName);
+    auto cards = m_cardService->getFlashcards(m_deckName);
     const int rowCount = cards.size();
 
     m_table->clearContents();
     m_table->setRowCount(rowCount);
 
     for (int i = 0; i < rowCount; ++i) {
-        // Now using pointer instead of reference
         const Flashcard* c = cards.at(i);
 
         // Question

@@ -1,4 +1,5 @@
 #include "addCardDialog.h"
+#include "../core/flashcard.h"
 #include "../core/flipcard.h"
 #include "../core/quizcard.h"
 #include <QVBoxLayout>
@@ -6,17 +7,17 @@
 #include <QLabel>
 #include <QMessageBox>
 
-AddCardDialog::AddCardDialog(DeckManager* manager,
+AddCardDialog::AddCardDialog(CardService* cardService,
                              const QString& deckName,
                              int editIndex,
                              QWidget* parent)
     : QDialog(parent),
-      m_deckManager(manager),
+      m_cardService(cardService),
       m_initialDeck(deckName),
       m_editIndex(editIndex)
 {
     setupUI();
-    auto cards = m_deckManager->getFlashcards(m_initialDeck);
+    auto cards = m_cardService->getFlashcards(m_initialDeck);
     if (m_editIndex >= 0 && m_editIndex < cards.size()) {
         // populate fields from cards[m_editIndex]
         Flashcard* card = cards.at(m_editIndex);
@@ -56,7 +57,7 @@ void AddCardDialog::setupUI() {
             this, &AddCardDialog::onTypeChanged);
 
     m_deckSelector = new QComboBox(this);
-    m_deckSelector->addItems(m_deckManager->getDeckNames());
+    m_deckSelector->addItems(m_cardService->getDeckNames());
     m_deckSelector->setCurrentText(m_initialDeck);
 
     topLayout->addWidget(new QLabel(tr("Type:"), this));
@@ -133,7 +134,7 @@ void AddCardDialog::onTypeChanged(const QString& type) {
 
 void AddCardDialog::onAddClicked() {
     const QString deck = m_deckSelector->currentText();
-    Flashcard* card = nullptr;
+    bool ok = false;
 
     if (m_typeSelector->currentText() == tr("Flip")) {
         QString q = m_flipQuestionInput->text().trimmed();
@@ -143,7 +144,14 @@ void AddCardDialog::onAddClicked() {
                                  tr("Please fill out both question and answer."));
             return;
         }
-        card = m_deckManager->createFlipCard(q, a);
+        
+        if (m_editIndex >= 0) {
+            ok = m_cardService->updateFlipCard(deck, m_editIndex, q, a);
+            if (ok) emit cardEdited(deck, m_editIndex);
+        } else {
+            ok = m_cardService->addFlipCard(deck, q, a);
+            if (ok) emit cardAdded(deck);
+        }
     } else {
         QString q = m_quizQuestionInput->text().trimmed();
         if (q.isEmpty()) {
@@ -162,21 +170,17 @@ void AddCardDialog::onAddClicked() {
             opts << o;
         }
         int idx = m_quizCorrectSelector->currentIndex();
-        card = m_deckManager->createQuizCard(q, opts, idx);
-    }
-
-    bool ok;
-    if (m_editIndex >= 0) {
-        ok = m_deckManager->updateFlashcardInDeck(deck, m_editIndex, card);
-        if (ok) emit cardEdited(deck, m_editIndex);
-    } else {
-        ok = m_deckManager->addFlashcardToDeck(deck, card);
-        if (ok) emit cardAdded(deck);
+        
+        if (m_editIndex >= 0) {
+            ok = m_cardService->updateQuizCard(deck, m_editIndex, q, opts, idx);
+            if (ok) emit cardEdited(deck, m_editIndex);
+        } else {
+            ok = m_cardService->addQuizCard(deck, q, opts, idx);
+            if (ok) emit cardAdded(deck);
+        }
     }
 
     if (!ok) {
-        // If we failed to add/update the card, we need to delete it to prevent a memory leak
-        delete card;
         QMessageBox::critical(this, tr("Error"),
             m_editIndex >= 0 ? tr("Failed to save changes.") : tr("Failed to add card."));
         return;

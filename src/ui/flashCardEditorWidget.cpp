@@ -1,6 +1,5 @@
 #include "flashCardEditorWidget.h"
-#include "../core/deckmanager.h"
-#include "../core/flashcard.h"
+#include "../core/cardservice.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -9,10 +8,10 @@
 #include <QPushButton>
 #include <QMessageBox>
 
-FlashcardEditorWidget::FlashcardEditorWidget(DeckManager *deckManager, QWidget *parent)
+FlashcardEditorWidget::FlashcardEditorWidget(CardService *cardService, QWidget *parent)
     : QWidget(parent),
       m_isFrontVisible(true),
-      m_deckManager(deckManager)
+      m_cardService(cardService)
 {
     // Set up stacked editors
     m_stack = new QStackedWidget(this);
@@ -60,19 +59,14 @@ void FlashcardEditorWidget::onAddButtonClicked() {
         return;
     }
 
-    // Use the factory method to create a FlipCard
-    Flashcard* newCard = m_deckManager->createFlipCard(frontText, backText);
-
-    // NOTE: addFlashcardToDeck requires a deck name; using "Default" for now
-    if (m_deckManager->addFlashcardToDeck("Default", newCard)) {
+    // Use CardService to add a FlipCard
+    if (m_cardService->addFlipCard("Default", frontText, backText)) {
         QMessageBox::information(this, "Success", "Flashcard added successfully.");
         m_frontEditor->clear();
         m_backEditor->clear();
         m_stack->setCurrentIndex(0);
         m_isFrontVisible = true;
     } else {
-        // If we failed to add the card, we need to delete it to prevent memory leak
-        delete newCard;
         QMessageBox::critical(this, "Error", "Failed to add flashcard.");
     }
 }

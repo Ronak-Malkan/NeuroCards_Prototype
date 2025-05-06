@@ -12,11 +12,11 @@ static struct GradeInfo { const char* label; int quality; } gradeInfo[4] = {
     { "Easy",  5 }
 };
 
-StudyPanel::StudyPanel(DeckManager* manager,
+StudyPanel::StudyPanel(CardService* cardService,
                        const QString& deckName,
                        QWidget* parent)
     : QWidget(parent),
-      m_deckManager(manager),
+      m_cardService(cardService),
       m_deckName(deckName),
       m_orderIndices(),
       m_currentIndex(0),
@@ -36,7 +36,7 @@ void StudyPanel::setDeck(const QString& deckName) {
 
 void StudyPanel::reloadDeck() {
     // 1) Grab the full deck once
-    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_cardService->getFlashcards(m_deckName);
 
     // 2) Build a filtered+shuffled list of indices into that deck
     m_orderIndices.clear();
@@ -124,7 +124,7 @@ void StudyPanel::loadCurrentCard() {
     }
 
     // Fetch full deck and map our shuffled index into it
-    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_cardService->getFlashcards(m_deckName);
     int origIdx = m_orderIndices[m_currentIndex];
     Flashcard* card = allCards.at(origIdx);
 
@@ -158,7 +158,7 @@ void StudyPanel::loadCurrentCard() {
 void StudyPanel::flipCard() {
     if (m_orderIndices.isEmpty()) return;
 
-    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_cardService->getFlashcards(m_deckName);
     int origIdx = m_orderIndices[m_currentIndex];
     Flashcard* card = allCards.at(origIdx);
 
@@ -193,7 +193,7 @@ void StudyPanel::onGradeClicked() {
 
     // record on the real deck entry
     int origIdx = m_orderIndices[m_currentIndex];
-    m_deckManager->recordCardResult(m_deckName, origIdx, quality);
+    m_cardService->recordCardResult(m_deckName, origIdx, quality);
 
     // move on or exit
     if (m_currentIndex + 1 >= m_orderIndices.size())

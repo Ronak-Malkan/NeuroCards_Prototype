@@ -3,12 +3,14 @@
 
 #include <QMainWindow>
 #include <QStackedWidget>
-#include "../core/deckmanager.h"
 
+// Forward declarations
+class DeckManager;
+class CardService;
 class DeckListPanel;
 class DeckDetailPanel;
+class FlashcardEditorWidget;
 class StudyPanel;
-class AddCardDialog;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -17,16 +19,22 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-private:
-    DeckManager*      m_deckManager;
-    QStackedWidget*   m_stack;
+private slots:
+    void onDeckSelected(const QString &deckName);
+    void onBackToDeckList();
+    void onAddCardRequested(const QString &deckName);
+    void onStudyDue(const QString &deckName);
+    void onStudyAll(const QString &deckName);
+    void onExitStudy();
 
-    DeckListPanel*    m_deckListPanel;    // page 0
-    DeckDetailPanel*  m_deckDetailPanel;  // page 1
-    StudyPanel*       m_studyPanel;       // page 2
-   
-    void setupUi();
-    void setupConnections();
+private:
+    QStackedWidget *m_stackedWidget;
+    DeckManager *m_deckManager;  // We keep this as a member for ownership
+    CardService *m_cardService;
+    DeckListPanel *m_deckListPanel;
+    DeckDetailPanel *m_deckDetailPanel;
+    FlashcardEditorWidget *m_cardEditorWidget;
+    StudyPanel *m_studyPanel;
 };
 
 #endif // MAINWINDOW_H

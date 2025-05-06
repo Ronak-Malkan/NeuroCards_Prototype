@@ -8,6 +8,7 @@ SOURCES += \
     src/core/flashcard.cpp \
     src/core/flipcard.cpp \
     src/core/quizcard.cpp \
+    src/core/cardserviceimpl.cpp \
     src/core/deckmanager.cpp \
     src/ui/mainwindow.cpp \
     src/ui/flashCardEditorWidget.cpp \
@@ -24,6 +25,8 @@ HEADERS += \
     src/core/flashcard.h \
     src/core/flipcard.h \
     src/core/quizcard.h \
+    src/core/cardservice.h \
+    src/core/cardserviceimpl.h \
     src/core/deckmanager.h \
     src/ui/mainwindow.h \
     src/ui/flashCardEditorWidget.h \

@@ -1,82 +1,95 @@
 #include "mainwindow.h"
 #include "deckListPanel.h"
 #include "deckDetailPanel.h"
+#include "flashCardEditorWidget.h"
 #include "studyPanel.h"
 #include "addCardDialog.h"
+#include "../core/deckmanager.h"
+#include "../core/cardserviceimpl.h"
+#include <QVBoxLayout>
 
 MainWindow::MainWindow(QWidget *parent)
-  : QMainWindow(parent)
+    : QMainWindow(parent),
+      m_stackedWidget(new QStackedWidget(this)),
+      m_deckManager(new DeckManager(this)),
+      m_cardService(new CardServiceImpl(m_deckManager))
 {
-    // 1) Core model
-    m_deckManager = new DeckManager(this);
-
-    // 2) The stacked layout
-    m_stack = new QStackedWidget(this);
-
-    // 3) Instantiate each page
-    m_deckListPanel   = new DeckListPanel(m_deckManager, this);
-    m_deckDetailPanel = new DeckDetailPanel(m_deckManager, this);
-    m_studyPanel      = new StudyPanel(m_deckManager, QString(), this);
-
-    // 4) Add them in order
-    m_stack->addWidget(m_deckListPanel);     // index 0
-    m_stack->addWidget(m_deckDetailPanel);   // index 1
-    m_stack->addWidget(m_studyPanel);        // index 2
-
-    setCentralWidget(m_stack);
     resize(800, 600);
-    setWindowTitle("NeuroCards");
+    setWindowTitle(tr("NeuroCards"));
 
-    // 5) Connect navigation signals
+    // Create widget stack
+    setCentralWidget(m_stackedWidget);
 
-    // DeckList → DeckDetail
+    // Set up deck list panel
+    m_deckListPanel = new DeckListPanel(m_cardService, this);
+    m_stackedWidget->addWidget(m_deckListPanel);
+
+    // Set up deck detail panel
+    m_deckDetailPanel = new DeckDetailPanel(m_cardService, this);
+    m_stackedWidget->addWidget(m_deckDetailPanel);
+
+    // Set up card editor widget
+    m_cardEditorWidget = new FlashcardEditorWidget(m_cardService, this);
+    m_stackedWidget->addWidget(m_cardEditorWidget);
+
+    // Set up study panel
+    m_studyPanel = new StudyPanel(m_cardService, "Default", this);
+    m_stackedWidget->addWidget(m_studyPanel);
+
+    // Start with the deck list
+    m_stackedWidget->setCurrentWidget(m_deckListPanel);
+
+    // Connect signals
     connect(m_deckListPanel, &DeckListPanel::deckSelected,
-            this, [&](const QString& name){
-        m_deckDetailPanel->setDeck(name);
-        m_deckDetailPanel->refreshList();
-        m_stack->setCurrentWidget(m_deckDetailPanel);
-        setWindowTitle(tr("NeuroCards - %1").arg(name));
-    });
-
-    // DeckDetail → back to DeckList
+            this, &MainWindow::onDeckSelected);
     connect(m_deckDetailPanel, &DeckDetailPanel::backToDeckList,
-            this, [=](){
-        m_stack->setCurrentWidget(m_deckListPanel);
-        setWindowTitle(tr("NeuroCards"));
-    });
-
-    // DeckDetail → StudyModePanel
-    // Study Due only
-    connect(m_deckDetailPanel, &DeckDetailPanel::studyDue,
-            this, [&](const QString& name){
-        m_studyPanel->setDueOnly(true);
-        m_studyPanel->setDeck(name);
-        m_stack->setCurrentWidget(m_studyPanel);
-    });
-    // Study Full deck
-    connect(m_deckDetailPanel, &DeckDetailPanel::studyAll,
-            this, [&](const QString& name){
-        m_studyPanel->setDueOnly(false);
-        m_studyPanel->setDeck(name);
-        m_stack->setCurrentWidget(m_studyPanel);
-    });
-    // DeckDetail → AddCardDialog
+            this, &MainWindow::onBackToDeckList);
     connect(m_deckDetailPanel, &DeckDetailPanel::addCardRequested,
-            this, [&](const QString& name){
-        AddCardDialog dlg(m_deckManager, name, -1, this);
-        connect(&dlg, &AddCardDialog::cardAdded, this, [&](const QString& deck){
-            m_deckDetailPanel->setDeck(deck);
-            m_stack->setCurrentWidget(m_deckDetailPanel);
-        });
-        dlg.exec();
-    });
-
-    // StudyModePanel → back to DeckDetail
+            this, &MainWindow::onAddCardRequested);
+    connect(m_deckDetailPanel, &DeckDetailPanel::studyDue,
+            this, &MainWindow::onStudyDue);
+    connect(m_deckDetailPanel, &DeckDetailPanel::studyAll,
+            this, &MainWindow::onStudyAll);
     connect(m_studyPanel, &StudyPanel::exitStudy,
-            this, [=](){
-        m_stack->setCurrentWidget(m_deckDetailPanel);
-    });
+            this, &MainWindow::onExitStudy);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+    delete m_cardService; // Make sure to delete CardService before DeckManager
+}
+
+void MainWindow::onDeckSelected(const QString &deckName) {
+    m_deckDetailPanel->setDeck(deckName);
+    m_stackedWidget->setCurrentWidget(m_deckDetailPanel);
+}
+
+void MainWindow::onBackToDeckList() {
+    m_stackedWidget->setCurrentWidget(m_deckListPanel);
+}
+
+void MainWindow::onAddCardRequested(const QString &deckName) {
+    AddCardDialog dlg(m_cardService, deckName, -1, this);
+    if (dlg.exec() == QDialog::Accepted) {
+        m_deckDetailPanel->refreshList();
+    }
+}
+
+void MainWindow::onStudyDue(const QString &deckName) {
+    m_studyPanel->setDeck(deckName);
+    m_studyPanel->setDueOnly(true);
+    m_studyPanel->reloadDeck();
+    m_stackedWidget->setCurrentWidget(m_studyPanel);
+}
+
+void MainWindow::onStudyAll(const QString &deckName) {
+    m_studyPanel->setDeck(deckName);
+    m_studyPanel->setDueOnly(false);
+    m_studyPanel->reloadDeck();
+    m_stackedWidget->setCurrentWidget(m_studyPanel);
+}
+
+void MainWindow::onExitStudy() {
+    // Return to whichever screen we came from
+    m_stackedWidget->setCurrentWidget(m_deckDetailPanel);
+}
 

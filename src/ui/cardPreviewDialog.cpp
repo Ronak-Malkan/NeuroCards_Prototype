@@ -4,12 +4,12 @@
 #include <QMouseEvent>
 #include <QtGlobal>
 
-CardPreviewDialog::CardPreviewDialog(DeckManager* manager,
+CardPreviewDialog::CardPreviewDialog(CardService* cardService,
                                      const QString& deckName,
                                      int index,
                                      QWidget* parent)
   : QDialog(parent),
-    m_deckManager(manager),
+    m_cardService(cardService),
     m_deckName(deckName),
     m_index(index),
     m_showingFront(true)
@@ -36,7 +36,7 @@ CardPreviewDialog::CardPreviewDialog(DeckManager* manager,
     setLayout(layout);
 
     // show the front text initially
-    Flashcard* card = m_deckManager->getFlashcards(m_deckName).at(m_index);
+    Flashcard* card = m_cardService->getFlashcards(m_deckName).at(m_index);
     m_cardLabel->setText(card->getFrontText());
 }
 
@@ -60,7 +60,7 @@ void CardPreviewDialog::swapText() {
         return;
 
     // Swap the text
-    Flashcard* card = m_deckManager->getFlashcards(m_deckName).at(m_index);
+    Flashcard* card = m_cardService->getFlashcards(m_deckName).at(m_index);
     if (m_showingFront) {
         // Show back / correct answer…
         if (card->isQuizCard()) {
