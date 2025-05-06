@@ -35,13 +35,14 @@ private slots:
 private:
     DeckManager*    m_deckManager;
     QString         m_deckName;
+    QPushButton*    m_backButton;
+    QLabel*         m_titleLabel;
     QLabel*         m_countLabel;
     QPushButton*    m_statsButton;
     QPushButton*    m_studyAllButton;
     QPushButton*    m_studyDueButton;
     QPushButton*    m_addCardButton;
     QListWidget*    m_listWidget;
-    QPushButton*    m_backButton;
 };
 
 #endif // DECKDETAILPANEL_H

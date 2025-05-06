@@ -12,8 +12,9 @@
 DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
     : QWidget(parent)
     , m_deckManager(manager)
-    , m_backButton        (new QPushButton(tr("← Back"), this))
     , m_deckName          ()
+    , m_backButton        (new QPushButton(tr("← Back"), this))
+    , m_titleLabel        (new QLabel(this))
     , m_countLabel        (new QLabel(this))
     , m_statsButton       (new QPushButton(tr("Stats"), this))
     , m_studyAllButton    (new QPushButton(tr("Study All"), this))
@@ -24,8 +25,11 @@ DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
     // Top‐bar layout
     auto* topLayout = new QHBoxLayout();
     topLayout->addWidget(m_backButton);
-    topLayout->addWidget(m_countLabel);
+    topLayout->addWidget(m_titleLabel);
+    m_titleLabel->setText(tr("Deck: (none)"));
+    m_titleLabel->setStyleSheet("font-weight: bold; margin-left:8px");
     topLayout->addStretch();
+    topLayout->addWidget(m_countLabel);
     topLayout->addWidget(m_statsButton);
     topLayout->addWidget(m_studyDueButton);
     topLayout->addWidget(m_studyAllButton);
@@ -41,20 +45,25 @@ DeckDetailPanel::DeckDetailPanel(DeckManager* manager, QWidget* parent)
     setLayout(mainLayout);
 
     // Signal wiring
-    connect(m_backButton,     &QPushButton::clicked,  this, &DeckDetailPanel::onBackClicked);
-    connect(m_statsButton,    &QPushButton::clicked,  this, &DeckDetailPanel::onStatsClicked);
-    connect(m_addCardButton,  &QPushButton::clicked,  this, &DeckDetailPanel::onAddCardClicked);
-    connect(m_studyDueButton, &QPushButton::clicked,  this, [this]{ emit studyDue(m_deckName); });
-    connect(m_studyAllButton, &QPushButton::clicked,  this, [this]{ emit studyAll(m_deckName); });
-
-    connect(m_listWidget, &QListWidget::itemClicked,
+    connect(m_backButton,     &QPushButton::clicked,  
+            this, &DeckDetailPanel::onBackClicked);
+    connect(m_statsButton,    &QPushButton::clicked,  
+            this, &DeckDetailPanel::onStatsClicked);
+    connect(m_addCardButton,  &QPushButton::clicked,  
+            this, &DeckDetailPanel::onAddCardClicked);
+    connect(m_studyDueButton, &QPushButton::clicked,  
+            this, [this]{ emit studyDue(m_deckName); });
+    connect(m_studyAllButton, &QPushButton::clicked,  
+            this, [this]{ emit studyAll(m_deckName); });
+    connect(m_listWidget,     &QListWidget::itemClicked,  
             this, &DeckDetailPanel::onItemClicked);
-    connect(m_listWidget, &QListWidget::customContextMenuRequested,
+    connect(m_listWidget,     &QListWidget::customContextMenuRequested,      
             this, &DeckDetailPanel::onListContextMenu);
 }
 
 void DeckDetailPanel::setDeck(const QString& deckName) {
     m_deckName = deckName;
+    m_titleLabel->setText(tr("Deck: %1").arg(deckName));
     refreshList();
 }
 

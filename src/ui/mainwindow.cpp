@@ -35,12 +35,14 @@ MainWindow::MainWindow(QWidget *parent)
         m_deckDetailPanel->setDeck(name);
         m_deckDetailPanel->refreshList();
         m_stack->setCurrentWidget(m_deckDetailPanel);
+        setWindowTitle(tr("NeuroCards - %1").arg(name));
     });
 
     // DeckDetail → back to DeckList
     connect(m_deckDetailPanel, &DeckDetailPanel::backToDeckList,
             this, [=](){
         m_stack->setCurrentWidget(m_deckListPanel);
+        setWindowTitle(tr("NeuroCards"));
     });
 
     // DeckDetail → StudyModePanel
