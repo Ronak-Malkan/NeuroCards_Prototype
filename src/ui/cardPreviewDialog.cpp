@@ -1,4 +1,5 @@
 #include "cardPreviewDialog.h"
+#include "../core/quizcard.h"
 #include <QVBoxLayout>
 #include <QMouseEvent>
 #include <QtGlobal>
@@ -35,8 +36,8 @@ CardPreviewDialog::CardPreviewDialog(DeckManager* manager,
     setLayout(layout);
 
     // show the front text initially
-    const auto& card = m_deckManager->getFlashcards(m_deckName).at(m_index);
-    m_cardLabel->setText(card.getFrontText());
+    Flashcard* card = m_deckManager->getFlashcards(m_deckName).at(m_index);
+    m_cardLabel->setText(card->getFrontText());
 }
 
 void CardPreviewDialog::mousePressEvent(QMouseEvent* ev) {
@@ -59,24 +60,33 @@ void CardPreviewDialog::swapText() {
         return;
 
     // Swap the text
-    const auto& card = m_deckManager->getFlashcards(m_deckName).at(m_index);
+    Flashcard* card = m_deckManager->getFlashcards(m_deckName).at(m_index);
     if (m_showingFront) {
         // Show back / correct answer…
-        if (card.isQuizCard()) {
-            QString txt;
-            for (int i = 0; i < card.getOptions().size(); ++i)
-                txt += QString("%1. %2\n")
-                           .arg(i+1)
-                           .arg(card.getOptions().at(i));
-            txt += QString("\nAnswer: %1")
-                       .arg(card.getOptions().at(card.getCorrectOptionIndex()));
-            m_cardLabel->setText(txt);
+        if (card->isQuizCard()) {
+            // Cast to QuizCard to access quiz-specific methods
+            QuizCard* quizCard = dynamic_cast<QuizCard*>(card);
+            if (quizCard) {
+                QString txt;
+                auto options = quizCard->getOptions();
+                for (int i = 0; i < options.size(); ++i)
+                    txt += QString("%1. %2\n")
+                               .arg(i+1)
+                               .arg(options.at(i));
+                
+                int correctIdx = quizCard->getCorrectIndex();
+                if (correctIdx >= 0 && correctIdx < options.size()) {
+                    txt += QString("\nAnswer: %1")
+                               .arg(options.at(correctIdx));
+                }
+                m_cardLabel->setText(txt);
+            }
         } else {
-            m_cardLabel->setText(card.getBackText());
+            m_cardLabel->setText(card->getBackText());
         }
     } else {
         // Show front again
-        m_cardLabel->setText(card.getFrontText());
+        m_cardLabel->setText(card->getFrontText());
     }
     m_showingFront = !m_showingFront;
 

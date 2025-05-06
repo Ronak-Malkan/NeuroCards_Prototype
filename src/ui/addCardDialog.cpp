@@ -1,5 +1,6 @@
-
 #include "addCardDialog.h"
+#include "../core/flipcard.h"
+#include "../core/quizcard.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -18,21 +19,26 @@ AddCardDialog::AddCardDialog(DeckManager* manager,
     auto cards = m_deckManager->getFlashcards(m_initialDeck);
     if (m_editIndex >= 0 && m_editIndex < cards.size()) {
         // populate fields from cards[m_editIndex]
-        const Flashcard& c = cards.at(m_editIndex);
-        if (c.isQuizCard()) {
+        Flashcard* card = cards.at(m_editIndex);
+        if (card->isQuizCard()) {
             m_typeSelector->setCurrentText(tr("Quiz"));
-            m_quizQuestionInput->setText(c.getFrontText());
-            auto opts = c.getOptions();
-            for (int i = 0; i < opts.size(); ++i)
-                m_quizOptionInputs[i]->setText(opts[i]);
-                m_quizCorrectSelector->setCurrentIndex(c.getCorrectOptionIndex());
+            m_quizQuestionInput->setText(card->getFrontText());
+            
+            // Cast to QuizCard to access quiz-specific methods
+            QuizCard* quizCard = dynamic_cast<QuizCard*>(card);
+            if (quizCard) {
+                auto opts = quizCard->getOptions();
+                for (int i = 0; i < qMin(opts.size(), 4); ++i)
+                    m_quizOptionInputs[i]->setText(opts[i]);
+                m_quizCorrectSelector->setCurrentIndex(quizCard->getCorrectIndex());
+            }
         } else {
             m_typeSelector->setCurrentText(tr("Flip"));
-            m_flipQuestionInput->setText(c.getFrontText());
-            m_flipAnswerInput->setText(c.getBackText());
+            m_flipQuestionInput->setText(card->getFrontText());
+            m_flipAnswerInput->setText(card->getBackText());
         }
     } else {
-        // treat as “new card”
+        // treat as "new card"
         m_editIndex = -1;
     }
     
@@ -127,7 +133,7 @@ void AddCardDialog::onTypeChanged(const QString& type) {
 
 void AddCardDialog::onAddClicked() {
     const QString deck = m_deckSelector->currentText();
-    Flashcard card("", "");
+    Flashcard* card = nullptr;
 
     if (m_typeSelector->currentText() == tr("Flip")) {
         QString q = m_flipQuestionInput->text().trimmed();
@@ -137,7 +143,7 @@ void AddCardDialog::onAddClicked() {
                                  tr("Please fill out both question and answer."));
             return;
         }
-        card = Flashcard(q, a);
+        card = m_deckManager->createFlipCard(q, a);
     } else {
         QString q = m_quizQuestionInput->text().trimmed();
         if (q.isEmpty()) {
@@ -156,7 +162,7 @@ void AddCardDialog::onAddClicked() {
             opts << o;
         }
         int idx = m_quizCorrectSelector->currentIndex();
-        card = Flashcard(q, opts, idx);
+        card = m_deckManager->createQuizCard(q, opts, idx);
     }
 
     bool ok;
@@ -169,6 +175,8 @@ void AddCardDialog::onAddClicked() {
     }
 
     if (!ok) {
+        // If we failed to add/update the card, we need to delete it to prevent a memory leak
+        delete card;
         QMessageBox::critical(this, tr("Error"),
             m_editIndex >= 0 ? tr("Failed to save changes.") : tr("Failed to add card."));
         return;

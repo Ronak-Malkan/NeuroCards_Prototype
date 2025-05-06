@@ -1,4 +1,5 @@
 #include "studyPanel.h"
+#include "../core/quizcard.h"
 #include <QRandomGenerator>
 #include <algorithm>
 #include <QDebug>
@@ -35,13 +36,13 @@ void StudyPanel::setDeck(const QString& deckName) {
 
 void StudyPanel::reloadDeck() {
     // 1) Grab the full deck once
-    QVector<Flashcard> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
 
     // 2) Build a filtered+shuffled list of indices into that deck
     m_orderIndices.clear();
     QDate today = QDate::currentDate();
     for (int i = 0; i < allCards.size(); ++i) {
-        if (!m_dueOnly || allCards[i].getNextReview() <= today) {
+        if (!m_dueOnly || allCards[i]->getNextReview() <= today) {
             m_orderIndices.append(i);
         }
     }
@@ -55,7 +56,7 @@ void StudyPanel::reloadDeck() {
     m_currentIndex = 0;
     m_showingFront = true;
 
-    // 4) Show the first card (or “no cards”)
+    // 4) Show the first card (or "no cards")
     loadCurrentCard();
 }
 
@@ -123,22 +124,27 @@ void StudyPanel::loadCurrentCard() {
     }
 
     // Fetch full deck and map our shuffled index into it
-    QVector<Flashcard> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
     int origIdx = m_orderIndices[m_currentIndex];
-    const Flashcard& card = allCards.at(origIdx);
+    Flashcard* card = allCards.at(origIdx);
 
     m_showingFront = true;
 
-    // Show the “front” or question/options
-    if (card.isQuizCard()) {
-        QString txt = card.getFrontText() + "\n\n";
-        for (int i = 0; i < card.getOptions().size(); ++i)
-            txt += QString("%1. %2\n")
-                     .arg(i+1)
-                     .arg(card.getOptions()[i]);
-        m_cardLabel->setText(txt);
+    // Show the "front" or question/options
+    if (card->isQuizCard()) {
+        // Cast to QuizCard to access quiz-specific methods
+        QuizCard* quizCard = dynamic_cast<QuizCard*>(card);
+        if (quizCard) {
+            QString txt = quizCard->getFrontText() + "\n\n";
+            auto options = quizCard->getOptions();
+            for (int i = 0; i < options.size(); ++i)
+                txt += QString("%1. %2\n")
+                         .arg(i+1)
+                         .arg(options[i]);
+            m_cardLabel->setText(txt);
+        }
     } else {
-        m_cardLabel->setText(card.getFrontText());
+        m_cardLabel->setText(card->getFrontText());
     }
 
     // Disable grading until flip
@@ -152,18 +158,25 @@ void StudyPanel::loadCurrentCard() {
 void StudyPanel::flipCard() {
     if (m_orderIndices.isEmpty()) return;
 
-    QVector<Flashcard> allCards = m_deckManager->getFlashcards(m_deckName);
+    QVector<Flashcard*> allCards = m_deckManager->getFlashcards(m_deckName);
     int origIdx = m_orderIndices[m_currentIndex];
-    const Flashcard& card = allCards.at(origIdx);
+    Flashcard* card = allCards.at(origIdx);
 
     if (m_showingFront) {
         // show back or correct answer
-        if (card.isQuizCard())
-            m_cardLabel->setText(QStringLiteral("→ ") +
-                                 card.getOptions().at(card.getCorrectOptionIndex()));
-        else
-            m_cardLabel->setText(QStringLiteral("→ ") + 
-                                 card.getBackText());
+        if (card->isQuizCard()) {
+            // Cast to QuizCard to access quiz-specific methods
+            QuizCard* quizCard = dynamic_cast<QuizCard*>(card);
+            if (quizCard) {
+                auto options = quizCard->getOptions();
+                int correctIndex = quizCard->getCorrectIndex();
+                if (correctIndex >= 0 && correctIndex < options.size()) {
+                    m_cardLabel->setText(QStringLiteral("→ ") + options.at(correctIndex));
+                }
+            }
+        } else {
+            m_cardLabel->setText(QStringLiteral("→ ") + card->getBackText());
+        }
 
         for (auto* btn : m_gradeButtons)
             btn->setEnabled(true);

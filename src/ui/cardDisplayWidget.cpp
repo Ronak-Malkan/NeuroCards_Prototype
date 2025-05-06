@@ -1,8 +1,9 @@
 #include "cardDisplayWidget.h"
+#include "../core/quizcard.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
 
-CardDisplayWidget::CardDisplayWidget(const Flashcard& card, QWidget* parent)
+CardDisplayWidget::CardDisplayWidget(Flashcard* card, QWidget* parent)
   : QWidget(parent),
     card_(card),
     showingFront_(true)
@@ -10,7 +11,7 @@ CardDisplayWidget::CardDisplayWidget(const Flashcard& card, QWidget* parent)
     label_ = new QLabel(this);
     label_->setAlignment(Qt::AlignCenter);
     label_->setWordWrap(true);
-    label_->setText(card_.getFrontText());
+    label_->setText(card_->getFrontText());
 
     auto *lay = new QHBoxLayout(this);
     lay->addWidget(label_);
@@ -41,18 +42,22 @@ void CardDisplayWidget::buildAnimation() {
 
 void CardDisplayWidget::swapText() {
     if (showingFront_) {
-        if (card_.isQuizCard()) {
-            // show question + options
-            QString s = card_.getFrontText() + "\n\n";
-            auto opts = card_.getOptions();
-            for (int i=0;i<opts.size();++i)
-                s += QString("%1. %2\n").arg(i+1).arg(opts[i]);
-            label_->setText(s);
+        if (card_->isQuizCard()) {
+            // Cast to QuizCard to access quiz-specific functionality
+            QuizCard* quizCard = dynamic_cast<QuizCard*>(card_);
+            if (quizCard) {
+                // show question + options
+                QString s = quizCard->getFrontText() + "\n\n";
+                auto opts = quizCard->getOptions();
+                for (int i=0; i<opts.size(); ++i)
+                    s += QString("%1. %2\n").arg(i+1).arg(opts[i]);
+                label_->setText(s);
+            }
         } else {
-            label_->setText(card_.getBackText());
+            label_->setText(card_->getBackText());
         }
     } else {
-        label_->setText(card_.getFrontText());
+        label_->setText(card_->getFrontText());
     }
     showingFront_ = !showingFront_;
 }

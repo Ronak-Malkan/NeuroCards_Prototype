@@ -60,7 +60,8 @@ void FlashcardEditorWidget::onAddButtonClicked() {
         return;
     }
 
-    Flashcard newCard(frontText, backText);
+    // Use the factory method to create a FlipCard
+    Flashcard* newCard = m_deckManager->createFlipCard(frontText, backText);
 
     // NOTE: addFlashcardToDeck requires a deck name; using "Default" for now
     if (m_deckManager->addFlashcardToDeck("Default", newCard)) {
@@ -70,6 +71,8 @@ void FlashcardEditorWidget::onAddButtonClicked() {
         m_stack->setCurrentIndex(0);
         m_isFrontVisible = true;
     } else {
+        // If we failed to add the card, we need to delete it to prevent memory leak
+        delete newCard;
         QMessageBox::critical(this, "Error", "Failed to add flashcard.");
     }
 }

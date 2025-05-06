@@ -10,13 +10,13 @@
 class CardDisplayWidget : public QWidget {
     Q_OBJECT
 public:
-    explicit CardDisplayWidget(const Flashcard& card, QWidget* parent = nullptr);
+    explicit CardDisplayWidget(Flashcard* card, QWidget* parent = nullptr);
 
 protected:
     void mousePressEvent(QMouseEvent* ev) override;
 
 private:
-    Flashcard card_;
+    Flashcard* card_;
     bool showingFront_;
 
     QLabel* label_;

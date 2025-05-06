@@ -48,23 +48,24 @@ void StatsDialog::populateStats() {
     m_table->setRowCount(rowCount);
 
     for (int i = 0; i < rowCount; ++i) {
-        const Flashcard& c = cards.at(i);
+        // Now using pointer instead of reference
+        const Flashcard* c = cards.at(i);
 
         // Question
         m_table->setItem(i, 0,
-            new QTableWidgetItem(c.getFrontText())
+            new QTableWidgetItem(c->getFrontText())
         );
         // Attempts
         m_table->setItem(i, 1,
-            new QTableWidgetItem(QString::number(c.getAttempts()))
+            new QTableWidgetItem(QString::number(c->getAttempts()))
         );
         // Correct
         m_table->setItem(i, 2,
-            new QTableWidgetItem(QString::number(c.getCorrectCount()))
+            new QTableWidgetItem(QString::number(c->getCorrectCount()))
         );
         // Percent
-        int pct = (c.getAttempts() > 0)
-                  ? qRound(100.0 * c.getCorrectCount() / c.getAttempts())
+        int pct = (c->getAttempts() > 0)
+                  ? qRound(100.0 * c->getCorrectCount() / c->getAttempts())
                   : 0;
         m_table->setItem(i, 3,
             new QTableWidgetItem(QString::number(pct) + "%")

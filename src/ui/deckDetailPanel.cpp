@@ -70,8 +70,8 @@ void DeckDetailPanel::setDeck(const QString& deckName) {
 void DeckDetailPanel::refreshList() {
     auto cards = m_deckManager->getFlashcards(m_deckName);
     m_listWidget->clear();
-    for (const Flashcard& c : cards)
-        m_listWidget->addItem(c.getFrontText());
+    for (const Flashcard* card : cards)
+        m_listWidget->addItem(card->getFrontText());
     m_countLabel->setText(tr("Cards: %1").arg(cards.size()));
 }
 

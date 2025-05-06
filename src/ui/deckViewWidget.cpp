@@ -30,8 +30,7 @@ void DeckViewWidget::connectSignals() {
         int row = m_listWidget->row(item);
         auto cards = m_deckManager->getDueFlashcards(m_deckName);
         if (row >= 0 && row < cards.size()) {
-            const Flashcard& card = cards.at(row);
-            // Emit a signal or show preview directly:
+            // Show preview dialog
             CardPreviewDialog dlg(m_deckManager,
                                   m_deckName,
                                   row,
@@ -44,9 +43,9 @@ void DeckViewWidget::connectSignals() {
 void DeckViewWidget::refreshList() {
     m_listWidget->clear();
     auto cards = m_deckManager->getDueFlashcards(m_deckName);
-    for (const Flashcard& card : cards) {
+    for (Flashcard* card : cards) {
         // Show only the front text
-        m_listWidget->addItem(card.getFrontText());
+        m_listWidget->addItem(card->getFrontText());
     }
 }
 

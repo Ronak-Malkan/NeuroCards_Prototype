@@ -21,7 +21,7 @@ public:
 
 signals:
     // Emitted when a card is clicked for preview
-    void cardClicked(const Flashcard& card);
+    void cardClicked(Flashcard* card);
 
 private:
     DeckManager* m_deckManager;
