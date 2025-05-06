@@ -1,0 +1,186 @@
+@startuml NeuroCards
+
+' Style configuration
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classFontSize 14
+skinparam classBackgroundColor LightGreen
+skinparam classArrowColor Black
+skinparam classBorderColor DarkGreen
+skinparam packageBackgroundColor LightBlue
+
+' Package declaration
+package "Core" {
+    abstract class Flashcard {
+        -m_attempts: int
+        -m_correctCount: int
+        -m_repetition: int
+        -m_interval: int
+        -m_easeFactor: double
+        -m_nextReview: QDate
+        +getFrontText(): QString
+        +getBackText(): QString
+        +isQuizCard(): bool
+        +recordResult(quality: int): void
+        +getAttempts(): int
+        +getCorrectCount(): int
+        +getRepetition(): int
+        +getInterval(): int
+        +getEaseFactor(): double
+        +getNextReview(): QDate
+        +toJson(): QJsonObject
+        {static} +fromJson(obj: QJsonObject): Flashcard*
+    }
+    
+    class FlipCard {
+        -m_front: QString
+        -m_back: QString
+        +FlipCard(front: QString, back: QString)
+        +getFrontText(): QString
+        +getBackText(): QString
+        +isQuizCard(): bool
+        +toJson(): QJsonObject
+    }
+    
+    class QuizCard {
+        -m_front: QString
+        -m_options: QStringList
+        -m_correctIndex: int
+        +QuizCard(front: QString, options: QStringList, correctIndex: int)
+        +getFrontText(): QString
+        +getBackText(): QString
+        +isQuizCard(): bool
+        +getOptions(): QStringList
+        +getCorrectIndex(): int
+        +toJson(): QJsonObject
+    }
+    
+    class DeckManager {
+        -m_decks: QMap<QString, QVector<Flashcard>>
+        -m_dataFilePath: QString
+        +getDeckNames(): QStringList
+        +createDeck(name: QString): bool
+        +renameDeck(oldName: QString, newName: QString): bool
+        +deleteDeck(name: QString): bool
+        +recordCardResult(deckName: QString, index: int, quality: int): bool
+        +getFlashcards(deckName: QString): QVector<Flashcard>
+        +getDueFlashcards(deckName: QString): QVector<Flashcard>
+        +addFlashcardToDeck(deckName: QString, card: Flashcard): bool
+        +removeFlashcardFromDeck(deckName: QString, index: int): bool
+        +updateFlashcardInDeck(deckName: QString, index: int, card: Flashcard): bool
+        -loadFromFile(): void
+        -saveToFile(): void
+    }
+    
+    interface CardService {
+        +getDeckNames(): QStringList
+        +createDeck(name: QString): bool
+        +renameDeck(oldName: QString, newName: QString): bool
+        +deleteDeck(name: QString): bool
+        +getFlashcards(deckName: QString): QVector<Flashcard*>
+        +getDueFlashcards(deckName: QString): QVector<Flashcard*>
+        +addFlipCard(deckName: QString, front: QString, back: QString): bool
+        +addQuizCard(deckName: QString, front: QString, options: QStringList, correctIndex: int): bool
+        +updateFlipCard(deckName: QString, index: int, front: QString, back: QString): bool
+        +updateQuizCard(deckName: QString, index: int, front: QString, options: QStringList, correctIndex: int): bool
+        +removeCard(deckName: QString, index: int): bool
+        +recordCardResult(deckName: QString, index: int, quality: int): bool
+    }
+    
+    class CardServiceImpl {
+        -m_deckManager: DeckManager*
+        +CardServiceImpl(deckManager: DeckManager*)
+    }
+}
+
+package "UI" {
+    class MainWindow {
+        -m_stackedWidget: QStackedWidget*
+        -m_deckManager: DeckManager*
+        -m_cardService: CardService*
+        -m_deckListPanel: DeckListPanel*
+        -m_deckDetailPanel: DeckDetailPanel*
+        -m_cardEditorWidget: FlashcardEditorWidget*
+        -m_studyPanel: StudyPanel*
+    }
+    
+    class DeckListPanel {
+        -m_cardService: CardService*
+        -m_listWidget: QListWidget*
+        +deckSelected(deckName: QString) [signal]
+    }
+    
+    class DeckDetailPanel {
+        -m_cardService: CardService*
+        -m_deckName: QString
+        -m_listWidget: QListWidget*
+        +backToDeckList() [signal]
+        +studyAll(deckName: QString) [signal]
+        +studyDue(deckName: QString) [signal]
+        +addCardRequested(deckName: QString) [signal]
+    }
+    
+    class FlashcardEditorWidget {
+        -m_isFrontVisible: bool
+        -m_cardService: CardService*
+        -m_stack: QStackedWidget*
+        -m_frontEditor: QTextEdit*
+        -m_backEditor: QTextEdit*
+    }
+    
+    class StudyPanel {
+        -m_cardService: CardService*
+        -m_deckName: QString
+        -m_orderIndices: QVector<int>
+        -m_currentIndex: int
+        -m_showingFront: bool
+        -m_dueOnly: bool
+        +exitStudy() [signal]
+    }
+    
+    class AddCardDialog {
+        -m_cardService: CardService*
+        -m_initialDeck: QString
+        -m_editIndex: int
+        +cardAdded(deckName: QString) [signal]
+        +cardEdited(deckName: QString, index: int) [signal]
+    }
+    
+    class CardPreviewDialog {
+        -m_cardService: CardService*
+        -m_deckName: QString
+        -m_index: int
+        -m_showingFront: bool
+    }
+    
+    class StatsDialog {
+        -m_cardService: CardService*
+        -m_deckName: QString
+        -m_table: QTableWidget*
+    }
+}
+
+' Inheritance relationships
+Flashcard <|-- FlipCard
+Flashcard <|-- QuizCard
+CardService <|.. CardServiceImpl
+
+' Associations
+CardServiceImpl *-- DeckManager
+
+' UI relationships
+MainWindow *-- DeckListPanel
+MainWindow *-- DeckDetailPanel
+MainWindow *-- FlashcardEditorWidget
+MainWindow *-- StudyPanel
+
+' Service dependencies
+DeckListPanel o-- CardService
+DeckDetailPanel o-- CardService
+FlashcardEditorWidget o-- CardService
+StudyPanel o-- CardService
+AddCardDialog o-- CardService
+CardPreviewDialog o-- CardService
+StatsDialog o-- CardService
+
+@enduml
