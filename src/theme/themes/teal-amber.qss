@@ -1,0 +1,30 @@
+
+QMainWindow, QWidget {
+  background-color: #455A64;
+  color:          #FFFFFF;
+  font-family:    "Open Sans";
+  font-size:      14pt;
+}
+
+/* Teal buttons */
+QPushButton {
+  background-color: #00796B;
+  color: white;
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 14pt;
+}
+QPushButton:hover {
+  background-color: #004D40;
+}
+
+/* Amber selection highlight */
+QListView, QTableView {
+  selection-background-color: #2F4F4F;
+}
+
+QListView, QListWidget {
+  font-size: 18pt;
+  font-family: "Open Sans";
+  padding: 10px;
+}

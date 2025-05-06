@@ -1,3 +1,4 @@
+
 QT       += core gui widgets
 CONFIG   += c++17
 TARGET   = NeuroCards
@@ -19,7 +20,9 @@ SOURCES += \
     src/ui/deckListPanel.cpp \
     src/ui/deckDetailPanel.cpp \
     src/ui/addCardDialog.cpp \
-    src/ui/statsDialog.cpp 
+    src/ui/statsDialog.cpp \
+    src/theme/ThemeFactory.cpp \
+    src/theme/TealAmberTheme.cpp
 
 HEADERS += \
     src/core/flashcard.h \
@@ -37,4 +40,10 @@ HEADERS += \
     src/ui/deckListPanel.h \
     src/ui/deckDetailPanel.h \
     src/ui/addCardDialog.h \
-    src/ui/statsDialog.h
+    src/ui/statsDialog.h \
+    src/theme/ITheme.h \
+    src/theme/ThemeFactory.h \
+    src/theme/TealAmberTheme.h
+
+RESOURCES += \
+    src/theme/resources.qrc
