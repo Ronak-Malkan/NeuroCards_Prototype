@@ -1,0 +1,136 @@
+@startuml NeuroCards_Flow
+
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+skinparam activityBackgroundColor LightGreen
+skinparam activityBorderColor DarkGreen
+skinparam activityDiamondBackgroundColor LightBlue
+skinparam activityDiamondBorderColor DarkBlue
+skinparam arrowColor Black
+skinparam noteBackgroundColor LightYellow
+skinparam noteBorderColor DarkOrange
+
+title NeuroCards - Application Flow Diagram
+
+|User|
+start
+:Launch Application;
+
+|#AntiqueWhite|Application|
+:Initialize DeckManager;
+:Load data from JSON file;
+
+|User|
+:View Deck List;
+
+|Application|
+note right
+  DeckListPanel displays 
+  available decks
+end note
+
+|User|
+if (Action?) then (Create Deck)
+  :Input Deck Name;
+  |Application|
+  :Create new deck;
+  :Save to JSON file;
+  :Refresh deck list;
+  
+else (Select Deck)
+  |Application|
+  :Load deck details;
+  note right
+    DeckDetailPanel shows
+    cards in the selected deck
+  end note
+  
+  |User|
+  if (Action?) then (Add Card)
+    :Select Card Type;
+    if (Card Type) then (Flip Card)
+      :Enter question and answer;
+    else (Quiz Card)
+      :Enter question;
+      :Enter multiple choice options;
+      :Select correct answer;
+    endif
+    
+    |Application|
+    :Create card object;
+    :Add card to deck;
+    :Save to JSON file;
+    :Refresh card list;
+    
+  elseif (Action?) == (Study All Cards)
+    |Application|
+    :Load all cards;
+    :Shuffle cards;
+    
+  elseif (Action?) == (Study Due Cards)
+    |Application|
+    :Filter for due cards;
+    :Shuffle cards;
+    
+  elseif (Action?) == (Edit Card)
+    |Application|
+    :Load card details in editor;
+    |User|
+    :Modify card content;
+    |Application|
+    :Update card in deck;
+    :Save to JSON file;
+    
+  elseif (Action?) == (Delete Card)
+    |Application|
+    :Remove card from deck;
+    :Save to JSON file;
+    :Refresh card list;
+    
+  elseif (Action?) == (View Statistics)
+    |Application|
+    :Calculate card statistics;
+    :Display performance metrics;
+    
+  else (Go Back)
+    |Application|
+    :Return to deck list;
+  endif
+endif
+
+|User|
+if (Studying?) then (Yes)
+  repeat
+    |Application|
+    :Display card front (question);
+    
+    |User|
+    :View question;
+    :Click to flip card;
+    
+    |Application|
+    :Display card back (answer);
+    
+    |User|
+    :Grade performance;
+    
+    |Application|
+    :Apply spaced repetition algorithm;
+    :Update card review date;
+    :Save to JSON file;
+    
+    |User|
+    :Move to next card;
+  repeat while (More cards?) is (Yes)
+  ->No;
+  
+  |Application|
+  :Return to deck view;
+endif
+
+|User|
+:Exit or continue using application;
+
+stop
+
+@enduml

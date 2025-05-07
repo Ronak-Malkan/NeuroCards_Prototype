@@ -1,0 +1,200 @@
+@startuml NeuroCards_Sequence
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 200
+skinparam sequenceParticipant bold
+skinparam sequenceGroupBorderColor gray
+skinparam sequenceGroupBorderThickness 2
+
+actor User
+participant "MainWindow" as MW
+participant "DeckListPanel" as DLP
+participant "DeckDetailPanel" as DDP
+participant "AddCardDialog" as ACD
+participant "StudyPanel" as SP
+participant "CardService" as CS
+participant "DeckManager" as DM
+participant "Flashcard" as FC
+database "JSON File" as JSON
+
+title NeuroCards - Main Interaction Sequences
+
+group Application Startup
+    User -> MW: Launch application
+    activate MW
+    MW -> DM: new DeckManager()
+    activate DM
+    DM -> JSON: loadFromFile()
+    DM <-- JSON: File contents
+    DM -> FC: fromJson()
+    DM <-- FC: Flashcard objects
+    MW <-- DM: DeckManager instance
+    MW -> DLP: new DeckListPanel(deckManager)
+    activate DLP
+    DLP -> DM: getDeckNames()
+    DLP <-- DM: List of deck names
+    DLP -> DLP: Populate list
+    MW <-- DLP: DeckListPanel instance
+    MW -> DDP: new DeckDetailPanel(deckManager)
+    MW -> SP: new StudyPanel(deckManager)
+    MW -> MW: Connect signals & slots
+    User <-- MW: Display deck list
+    deactivate MW
+end
+
+group Deck Selection
+    User -> DLP: Select deck
+    activate DLP
+    DLP -> DLP: emit deckSelected(deckName)
+    MW <-- DLP: Signal: deckSelected(deckName)
+    activate MW
+    MW -> DDP: setDeck(deckName)
+    activate DDP
+    DDP -> DDP: m_deckName = deckName
+    DDP -> DM: getFlashcards(deckName)
+    DDP <-- DM: Vector of cards
+    DDP -> DDP: refreshList()
+    MW <-- DDP
+    MW -> MW: m_stack->setCurrentWidget(m_deckDetailPanel)
+    User <-- MW: Show deck details
+    deactivate MW
+    deactivate DLP
+    deactivate DDP
+end
+
+group Adding a New Card
+    User -> DDP: Click "Add Card"
+    activate DDP
+    DDP -> DDP: onAddCardClicked()
+    DDP -> DDP: emit addCardRequested(m_deckName)
+    MW <-- DDP: Signal: addCardRequested(deckName)
+    activate MW
+    MW -> ACD: new AddCardDialog(deckManager, deckName)
+    activate ACD
+    ACD -> CS: getFlashcards(deckName)
+    ACD <-- CS: Vector of cards
+    ACD -> ACD: setupUI()
+    MW <-- ACD: Show dialog
+    User <-- MW: Presented with card creation form
+    User -> ACD: Enter card details
+    User -> ACD: Click "Add"
+    ACD -> ACD: onAddClicked()
+    
+    alt Flip Card
+        ACD -> ACD: Get front/back text
+        ACD -> CS: addFlipCard(deckName, front, back)
+        CS -> DM: Create FlipCard
+        CS -> DM: addFlashcardToDeck(deckName, card)
+        DM -> JSON: saveToFile()
+        ACD <-- CS: Success/failure
+    else Quiz Card
+        ACD -> ACD: Get question, options, correct index
+        ACD -> CS: addQuizCard(deckName, front, options, correctIndex)
+        CS -> DM: Create QuizCard
+        CS -> DM: addFlashcardToDeck(deckName, card)
+        DM -> JSON: saveToFile()
+        ACD <-- CS: Success/failure
+    end
+    
+    ACD -> ACD: emit cardAdded(deckName)
+    MW <-- ACD: Signal: cardAdded(deckName)
+    MW -> DDP: setDeck(deckName)
+    DDP -> DDP: refreshList()
+    ACD -> ACD: accept()
+    User <-- MW: Return to deck detail with updated list
+    deactivate ACD
+    deactivate MW
+    deactivate DDP
+end
+
+group Study Flow
+    User -> DDP: Click "Study Due" or "Study All"
+    activate DDP
+    
+    alt Study Due
+        DDP -> DDP: emit studyDue(m_deckName)
+        MW <-- DDP: Signal: studyDue(deckName)
+        activate MW
+        MW -> SP: setDueOnly(true)
+    else Study All
+        DDP -> DDP: emit studyAll(m_deckName)
+        MW <-- DDP: Signal: studyAll(deckName)
+        activate MW
+        MW -> SP: setDueOnly(false)
+    end
+    
+    MW -> SP: setDeck(deckName)
+    activate SP
+    SP -> SP: m_deckName = deckName
+    SP -> SP: reloadDeck()
+    SP -> DM: getFlashcards(deckName)
+    SP <-- DM: Vector of cards
+    
+    alt DueOnly is true
+        SP -> SP: Filter for due cards
+    end
+    
+    SP -> SP: Shuffle cards
+    SP -> SP: loadCurrentCard()
+    SP -> SP: Show front of card
+    MW <-- SP: Ready for study
+    MW -> MW: m_stack->setCurrentWidget(m_studyPanel)
+    User <-- MW: See first flashcard question
+    deactivate MW
+    deactivate DDP
+    
+    User -> SP: Click on card
+    SP -> SP: flipCard()
+    SP -> SP: Show answer/back of card
+    SP -> SP: Enable grading buttons
+    User <-- SP: See flashcard answer
+    
+    User -> SP: Click grade button (Again/Hard/Good/Easy)
+    SP -> SP: onGradeClicked()
+    SP -> DM: recordCardResult(deckName, cardIndex, quality)
+    activate DM
+    DM -> FC: recordResult(quality)
+    activate FC
+    FC -> FC: Update SM-2 algorithm values
+    FC -> FC: Calculate next review date
+    DM <-- FC: Updated flashcard
+    deactivate FC
+    DM -> JSON: saveToFile()
+    SP <-- DM: Success/failure
+    deactivate DM
+    
+    alt Last card
+        SP -> SP: studyExit()
+        SP -> SP: emit exitStudy()
+        MW <-- SP: Signal: exitStudy()
+        activate MW
+        MW -> MW: m_stack->setCurrentWidget(m_deckDetailPanel)
+        User <-- MW: Return to deck detail view
+        deactivate MW
+    else More cards available
+        SP -> SP: showNextCard()
+        SP -> SP: loadCurrentCard()
+        User <-- SP: See next flashcard question
+    end
+    deactivate SP
+end
+
+group Statistics View
+    User -> DDP: Click "Stats"
+    activate DDP
+    DDP -> DDP: onStatsClicked()
+    DDP -> StatsDialog: new StatsDialog(deckManager, deckName)
+    activate StatsDialog
+    StatsDialog -> StatsDialog: setupUI()
+    StatsDialog -> StatsDialog: populateStats()
+    StatsDialog -> DM: getFlashcards(deckName)
+    StatsDialog <-- DM: Vector of cards
+    StatsDialog -> StatsDialog: Fill table with stats
+    User <-- StatsDialog: View flashcard statistics
+    User -> StatsDialog: Close dialog
+    deactivate StatsDialog
+    deactivate DDP
+end
+
+@enduml

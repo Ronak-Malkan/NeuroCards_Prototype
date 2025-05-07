@@ -1,0 +1,129 @@
+@startuml AddCard_Sequence
+
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 10
+skinparam maxmessagesize 200
+skinparam sequenceParticipant bold
+skinparam sequenceGroupBorderColor gray
+skinparam sequenceGroupBorderThickness 2
+skinparam backgroundColor white
+skinparam titleFontSize 20
+
+actor User
+participant "DeckDetailPanel" as DDP
+participant "MainWindow" as MW
+participant "AddCardDialog" as ACD
+participant "CardService" as CS
+participant "CardServiceImpl" as CSI
+participant "DeckManager" as DM
+participant "FlipCard" as FC
+participant "QuizCard" as QC
+database "JSON File" as JSON
+
+title NeuroCards - Add Card Sequence
+
+group Add Card Flow
+    User -> DDP: Click "Add Card" button
+    activate DDP
+    DDP -> DDP: onAddCardClicked()
+    DDP -> DDP: emit addCardRequested(m_deckName)
+    MW <-- DDP: Signal: addCardRequested(deckName)
+    deactivate DDP
+    
+    activate MW
+    MW -> ACD: new AddCardDialog(cardService, deckName, -1)
+    activate ACD
+    ACD -> ACD: setupUI()
+    
+    note right of ACD
+        Create UI components:
+        - Deck selector
+        - Card type selector (Flip/Quiz)
+        - Front/back text inputs for FlipCard
+        - Question/options inputs for QuizCard
+        - Add/Close buttons
+    end note
+    
+    ACD -> CS: getDeckNames()
+    CS -> CSI: getDeckNames()
+    CSI -> DM: getDeckNames()
+    CSI <-- DM: List of deck names
+    ACD <-- CS: List of deck names
+    ACD -> ACD: Populate deck selector
+    
+    MW <-- ACD: Show dialog
+    User <-- MW: Presented with card creation form
+    deactivate MW
+    
+    User -> ACD: Select card type (Flip/Quiz)
+    User -> ACD: Enter card content (question, answer/options)
+    User -> ACD: Click "Add" button
+    
+    ACD -> ACD: onAddClicked()
+    ACD -> ACD: Validate inputs
+    
+    alt Flip Card Selected
+        ACD -> ACD: Get front/back text
+        ACD -> CS: addFlipCard(deckName, front, back)
+        activate CS
+        CS -> CSI: addFlipCard(deckName, front, back)
+        activate CSI
+        CSI -> FC: new FlipCard(front, back)
+        activate FC
+        CSI <-- FC: FlipCard instance
+        deactivate FC
+        CSI -> DM: addFlashcardToDeck(deckName, card)
+        activate DM
+        DM -> DM: m_decks[deckName].append(card)
+        DM -> DM: saveToFile()
+        DM -> JSON: Write deck data
+        CSI <-- DM: Success/failure
+        deactivate DM
+        ACD <-- CS: Success/failure
+        deactivate CSI
+        deactivate CS
+        
+    else Quiz Card Selected
+        ACD -> ACD: Get question, options, correct index
+        ACD -> CS: addQuizCard(deckName, front, options, correctIndex)
+        activate CS
+        CS -> CSI: addQuizCard(deckName, front, options, correctIndex)
+        activate CSI
+        CSI -> QC: new QuizCard(front, options, correctIndex)
+        activate QC
+        CSI <-- QC: QuizCard instance
+        deactivate QC
+        CSI -> DM: addFlashcardToDeck(deckName, card)
+        activate DM
+        DM -> DM: m_decks[deckName].append(card)
+        DM -> DM: saveToFile()
+        DM -> JSON: Write deck data
+        CSI <-- DM: Success/failure
+        deactivate DM
+        ACD <-- CS: Success/failure
+        deactivate CSI
+        deactivate CS
+    end
+    
+    alt Success
+        ACD -> ACD: emit cardAdded(deckName)
+        MW <-- ACD: Signal: cardAdded(deckName)
+        activate MW
+        ACD -> ACD: accept()
+        deactivate ACD
+        MW -> DDP: setDeck(deckName)
+        activate DDP
+        DDP -> DM: getFlashcards(deckName)
+        DDP <-- DM: Vector of cards
+        DDP -> DDP: refreshList()
+        MW <-- DDP: Updated deck view
+        deactivate DDP
+        User <-- MW: Return to deck detail view with updated list
+        deactivate MW
+    else Failure
+        ACD -> ACD: Show error message
+        User <-- ACD: Error notification
+    end
+end
+
+@enduml
